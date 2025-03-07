@@ -5,7 +5,7 @@ import java.io.DataOutputStream
 import java.io.InputStreamReader
 
 class CommandUtils {
-    companion object{
+    companion object {
         fun runSuCommand(command: String, callback: (String) -> Unit) {
             Thread {
                 val result = StringBuilder()
