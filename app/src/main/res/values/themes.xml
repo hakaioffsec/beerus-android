@@ -3,5 +3,7 @@
     <style name = "NoActionBar" parent = "@android:style/Theme.Holo.Light">
         <item name = "android:windowActionBar">false</item>
         <item name = "android:windowNoTitle">true</item>
+
+        <item name="android:fontFamily">@font/ibm_plex_mono</item>
     </style>
 </resources>

@@ -1,63 +1,50 @@
 package io.hakaisecurity.beerusframework
 
-import android.app.Activity
-import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.paint
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup
-import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.readFridaCurrentVersion
-import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.startFridaModule
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.deleteModule
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.getAllModules
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.startModuleManager
-import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.fridaRunningState
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.confirmDialog
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.dismissDialog
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.showMagiskDialog
-import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
-import io.hakaisecurity.beerusframework.ui.theme.Globe
+import androidx.compose.ui.zIndex
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,230 +52,128 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
-                HomeScreen(context = LocalContext.current, modifier = Modifier)
+                HomeScreen(modifier = Modifier)
             }
         }
     }
 }
 
 @Composable
-fun HomeScreen(context: Context, modifier: Modifier = Modifier) {
-    val activity = context as Activity
-
-    Column (
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Row (verticalAlignment = Alignment.CenterVertically){
-            Icon(imageVector = Globe,
-                contentDescription = "Globe Icon",
-                tint = Color.White,
-                modifier = modifier.size(42.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Row (verticalAlignment = Alignment.CenterVertically){
-            Text(
-                text = "Hack the planet!",
-                textAlign = TextAlign.Center,
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Row (verticalAlignment = Alignment.CenterVertically){
-            FridaModule(modifier, activity)
-        }
-
-        Row (verticalAlignment = Alignment.CenterVertically){
-            MagiskManager(context)
-        }
-   }
-}
-
-@Composable
-fun FridaModule(modifier: Modifier, activity: Activity) {
-    val versions = remember { mutableStateListOf<String>() }
-    val isLoading = remember { mutableStateOf(true) }
-    var currentVersionFromList by remember { mutableStateOf<String?>(null) }
-    var expanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        FridaSetup.getFridaVersions(
-            onNewVersion = { version ->
-                if (!versions.contains(version)) {
-                    versions.add(version)
-                }
-            },
-            onLoadingComplete = { isLoading.value = false; currentVersionFromList = readFridaCurrentVersion(activity) }
-        )
-    }
-
-    Column {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier.padding(58.dp, 0.dp, 0.dp, 0.dp)
-        ) {
-            Text(
-                text = "frida version installed: ${readFridaCurrentVersion(activity)}",
-                textAlign = TextAlign.Center,
-                color = Color.White,
-                fontSize = 12.sp,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = { expanded = true }) {
-                Text(text = "Select a version")
-            }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                if (versions.isEmpty() && isLoading.value) {
-                    DropdownMenuItem(
-                        text = { Text(text = "No versions available") }, onClick = { expanded = false }
-                    )
-                } else {
-                    versions.forEach { item ->
-                        DropdownMenuItem(
-                            text = { Text(text = item) },
-                            onClick = { currentVersionFromList = item; expanded = false}
-                        )
-                    }
-                }
-            }
-
-            Button(
-                onClick = {
-                    currentVersionFromList?.let {
-                        if(it == "None"){
-                            startFridaModule(activity, versions[0], fridaRunningState)
-                        }else{
-                            startFridaModule(activity, it, fridaRunningState)
-                        }
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = when (fridaRunningState) {
-                        "start" -> Color.Green
-                        "stop" -> Color.Red
-                        else -> Color.Magenta
-                    }
-                )
-            ) {
-                Text(
-                    text = when (fridaRunningState) {
-                        "start" -> "Run Frida"
-                        "stop" -> "Stop Frida"
-                        else -> "Downloading Frida"
-                    },
-                    color = Color.White
-                )
-            }
-        }
-
-        if (isLoading.value) {
-            CircularProgressIndicator(modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
-        }
-    }
-}
-
-@Composable
-fun MagikRebootDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Reboot?") },
-        text = { Text("Beerus need to reboot to perform module actions") },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("Reboot")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Do After")
-            }
-        }
+fun HomeScreen(modifier: Modifier = Modifier) {
+    val configuration = LocalConfiguration.current
+    val screenHeight by remember { mutableStateOf(configuration.screenHeightDp.dp) }
+    val columnHeight = screenHeight * 0.65f
+    val ibmFont = FontFamily(
+        Font(R.font.ibmplexmono_regular, FontWeight.Normal),
+        Font(R.font.ibmplexmono_medium, FontWeight.Medium),
+        Font(R.font.ibmplexmono_bold, FontWeight.Bold),
+        Font(R.font.ibmplexmono_italic, FontWeight.Normal, FontStyle.Italic),
+        Font(R.font.ibmplexmono_mediumitalic, FontWeight.Medium, FontStyle.Italic),
+        Font(R.font.ibmplexmono_bolditalic, FontWeight.Bold, FontStyle.Italic)
     )
-}
 
-@Composable
-fun MagiskManager(context: Context){
-    val modulePropsList = remember { mutableStateListOf<String>() }
+    Box(
+        modifier = modifier.fillMaxSize()
+            .paint(
+                painterResource(id = R.drawable.cyberpunklines_bg),
+                contentScale = ContentScale.FillBounds,
+                colorFilter = ColorFilter.tint(Color.Red)
+            )
+    ) {
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {startModuleManager(context, it)}
-    }
-
-    LaunchedEffect(Unit) {
-        getAllModules(modulePropsList)
-    }
-
-    if (showMagiskDialog) {
-        MagikRebootDialog(
-            onDismiss = { dismissDialog(); modulePropsList.clear(); getAllModules(modulePropsList) },
-            onConfirm = { confirmDialog() }
-        )
-    }
-
-    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row (verticalAlignment = Alignment.CenterVertically){
-            Button(onClick = { launcher.launch("application/zip") }) {
-                Text("Select ZIP File")
-            }
-        }
-
-        modulePropsList.forEach { modulePath ->
-            var moduleName by remember { mutableStateOf("") }
-            var moduleVersion by remember { mutableStateOf("") }
-            var moduleAuthor by remember { mutableStateOf("") }
-            var moduleDescription by remember { mutableStateOf("") }
-
-            LaunchedEffect(modulePath) {
-                runSuCommand("cat $modulePath") { result ->
-                    val lines = result.lines()
-                    moduleName = lines.getOrNull(1)?.split("name=")?.get(1) ?: "Unknown Name"
-                    moduleVersion = lines.getOrNull(2)?.split("version=")?.get(1) ?: "Unknown Version"
-                    moduleAuthor = lines.getOrNull(4)?.split("author=")?.get(1) ?: "Unknown Author"
-                    moduleDescription = lines.getOrNull(5)?.split("description=")?.get(1) ?: "No Description"
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(WindowInsets.safeDrawing.asPaddingValues())
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .zIndex(1f)
+            ) {
+                Button(
+                    onClick = {},
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.elevatedButtonElevation(defaultElevation = 0.dp),
+                    modifier = modifier.padding(top = 8.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.menu),
+                        contentDescription = "Menu Button",
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
+            Spacer(modifier = Modifier.weight(1f))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
-                    .background(Color.Gray, shape = RoundedCornerShape(8.dp))
-                    .padding(16.dp)
+                    .align(Alignment.CenterHorizontally)
+                    .wrapContentSize()
             ) {
-                Column {
-                    Text(text = moduleName, color = Color.White, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "$moduleVersion by $moduleAuthor", color = Color.White)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = moduleDescription, color = Color.White, fontStyle = FontStyle.Italic)
-                    Button(onClick = { deleteModule(modulePath); modulePropsList.remove(modulePath) }) {
-                        Text("Delete")
-                    }
-                }
+                Image(
+                    painter = painterResource(id = R.drawable.beerushome),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(width = 212.dp, height = 154.dp)
+                        .align(Alignment.Center)
+                        .zIndex(2f)
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(columnHeight)
+                    .shadow(8.dp,shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), ambientColor = Color.Black)
+                    .background(Color(0xFF151515))
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "BEERUS\nframework",
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    fontSize = 28.sp,
+                    fontFamily = ibmFont,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                Text(
+                    text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel lorem ligula. Proin faucibus dolor erat, a ultricies ligula molestie scelerisque.",
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    fontSize = 12.sp,
+                    fontFamily = ibmFont,
+                    fontWeight = FontWeight.Normal
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Text(
+                    text = "If you really know, you can hack.\nBSDaemon",
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    fontSize = 12.sp,
+                    fontFamily = ibmFont,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
             }
         }
     }
 }
 
-@Preview(showSystemUi = true, showBackground = true, name = "Home Screen")
+@Preview(showBackground = true, name = "Home Screen")
 @Composable
 fun HomeScreenPreview() {
     Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
-        HomeScreen(context = LocalContext.current, modifier = Modifier)
+        HomeScreen(modifier = Modifier)
     }
 }
