@@ -13,7 +13,7 @@ import java.io.InputStream
 import java.io.OutputStream
 
 class MagiskModule {
-    companion object{
+    companion object {
         fun startModuleManager(context: Context, zipUri: Uri) {
             val zipFile = getFileNameFromUri(context, zipUri)
             val dirDestination = zipFile?.split(".")?.get(0)
@@ -29,7 +29,7 @@ class MagiskModule {
 
             runSuCommand("ls /data/adb/modules") { result ->
                 if (!result.contains("No such file or directory")) {
-                    runSuCommand("mkdir /data/adb/modules/${dirDestination}"){
+                    runSuCommand("mkdir /data/adb/modules/${dirDestination}") {
                         runSuCommand("unzip -o $cacheFile -d /data/adb/modules/${dirDestination}") {
                             showSDialog()
                         }
@@ -38,7 +38,7 @@ class MagiskModule {
             }
         }
 
-        fun getAllModules(modulePropsList: MutableList<String>){
+        fun getAllModules(modulePropsList: MutableList<String>) {
             runSuCommand("find /data/adb/modules/ -type f -name \"module.prop\" -exec ls -l {} \\; | cut -d \" \" -f 8") { result ->
                 result.split("\n").filter { it.isNotBlank() }.let { paths ->
                     modulePropsList.addAll(paths)
@@ -46,10 +46,10 @@ class MagiskModule {
             }
         }
 
-        fun deleteModule(modulePath: String){
+        fun deleteModule(modulePath: String) {
             val path = modulePath.replace("module.prop", "", ignoreCase = true)
 
-            runSuCommand("rm -rf $path"){}
+            runSuCommand("rm -rf $path") {}
         }
 
         private fun getFileNameFromUri(context: Context, uri: Uri): String? {
