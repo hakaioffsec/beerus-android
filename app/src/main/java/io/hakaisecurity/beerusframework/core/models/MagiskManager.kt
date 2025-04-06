@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils
 
 class MagiskManager : ViewModel() {
-    companion object{
+    companion object {
         var showMagiskDialog by mutableStateOf(false)
             private set
 
@@ -21,7 +21,7 @@ class MagiskManager : ViewModel() {
 
         fun confirmDialog() {
             showMagiskDialog = false
-            CommandUtils.runSuCommand("reboot"){}
+            CommandUtils.runSuCommand("reboot") {}
         }
     }
 }
