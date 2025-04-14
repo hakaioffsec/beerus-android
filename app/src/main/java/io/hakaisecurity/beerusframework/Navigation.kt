@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import io.hakaisecurity.beerusframework.composables.FridaScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
+import io.hakaisecurity.beerusframework.composables.SandboxScreen
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.moduleName
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateNavigationState
@@ -78,8 +79,8 @@ fun BaseNavigationComponent() {
     ) {
         val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
 
-        val items = listOf("Home", "Frida Setup")
-        val icons = listOf(Home, iconFrida)
+        val items = listOf("Home", "Frida Setup", "Sandbox")
+        val icons = listOf(Home, iconFrida, iconFrida)
 
         var iconIndex = 0
 
@@ -263,6 +264,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
             when (moduleName) {
                 "Home" -> HomeScreen(modifier)
                 "Frida Setup" -> FridaScreen(modifier, activity)
+                "Sandbox" -> SandboxScreen(modifier)
                 else -> HomeScreen(modifier)
             }
         }
