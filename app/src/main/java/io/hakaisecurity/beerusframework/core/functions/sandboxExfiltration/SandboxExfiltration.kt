@@ -3,6 +3,7 @@ package io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration
 import java.io.File
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import android.content.Context
+import io.hakaisecurity.beerusframework.core.models.Application
 
 class SandboxExfiltration {
 

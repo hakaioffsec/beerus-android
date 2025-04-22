@@ -5,7 +5,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,10 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration.Application
 import io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration.ApplicationInformation
 import io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration.SandboxExfiltration
-import kotlin.math.sin
+import io.hakaisecurity.beerusframework.core.models.Application
 
 @Composable
 fun SandboxScreen(modifier: Modifier = Modifier) {
@@ -54,13 +52,11 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
     var selectedApp by remember { mutableStateOf<Application?>(null) }
     var exfiltrationResult by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
-
-    val ApplicationInformation = remember { ApplicationInformation(context) }
     val sandboxExfiltration = remember { SandboxExfiltration() }
 
 
     LaunchedEffect(Unit) {
-            applications = ApplicationInformation.fetchApplications("/data/data")
+            applications = ApplicationInformation(context).fetchApplications("/data/data")
     }
 
     val filteredApps = applications.filter {

@@ -5,12 +5,12 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import io.hakaisecurity.beerusframework.core.models.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.DataOutputStream
 import java.io.InputStreamReader
-import androidx.core.graphics.createBitmap
 
 class ApplicationInformation(private val context: Context) {
 
@@ -39,20 +39,20 @@ class ApplicationInformation(private val context: Context) {
         return try {
             val packageManager = context.packageManager
             val drawable = packageManager.getApplicationIcon(packageName)
-            drawabletoBitmap(drawable)
+            return drawableToBitmap(drawable)
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
     }
 
-    private fun drawabletoBitmap(drawable: Drawable): Bitmap {
+    private fun drawableToBitmap(drawable: Drawable): Bitmap {
         return if (drawable is BitmapDrawable) {
             drawable.bitmap
         } else {
             val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 64
-            val heigh = drawable.intrinsicHeight.takeIf { it > 0 } ?: 64
-            val bitmap = createBitmap(width, heigh)
+            val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 64
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
 
             drawable.setBounds(0, 0, canvas.width, canvas.height)
@@ -61,52 +61,58 @@ class ApplicationInformation(private val context: Context) {
         }
     }
 
-    suspend fun fetchApplications(path: String): List<Application> = withContext(Dispatchers.IO) {
-        val apps = mutableListOf<Application>()
+    suspend fun fetchApplications(path: String): List<Application> =
+        withContext(Dispatchers.IO) {
+            val apps = mutableListOf<Application>()
+            val packagePattern = Regex("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$")
 
-        try {
-            val process = Runtime.getRuntime().exec("su")
-            DataOutputStream(process.outputStream).use { outputStrem ->
-                outputStrem.writeBytes("ls $path\n")
-                outputStrem.writeBytes("exit\n")
-                outputStrem.flush()
-            }
+            val bannedTerms = listOf(".auto_generated_")
+            val bannedPatterns = listOf(
+                Regex("com\\.android\\..*"),
+                Regex("com\\.google\\..*")
+            )
 
-            process.waitFor()
+            try {
+                val process = Runtime.getRuntime().exec("su")
+                DataOutputStream(process.outputStream).use { outputStream ->
+                    outputStream.writeBytes("ls $path\n")
+                    outputStream.writeBytes("exit\n")
+                    outputStream.flush()
+                }
 
-            BufferedReader(InputStreamReader(process.inputStream)).use { reader->
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    val packageName = line?.trim()
-                    if (!packageName.isNullOrEmpty()) {
-                        val apkPath = getAppApkLocation(packageName)
-                        if (!apkPath.isNullOrEmpty()) {
-                            apps.add(
-                                Application(
-                                    artifactPath = apkPath,
-                                    icon = getAppIconBitmap(packageName),
-                                    container = packageName,
-                                    identifier = packageName,
-                                    name = getAppName(packageName)
+                process.waitFor()
+
+                BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        if (line!!.isNotEmpty()) {
+                            val packageName = line!!
+
+                            val containsBannedTerm = bannedTerms.any { packageName.contains(it) }
+                            val matchesBannedPattern =
+                                bannedPatterns.any { it.matches(packageName) }
+
+                            if (!containsBannedTerm && !matchesBannedPattern && packagePattern.matches(
+                                    packageName
                                 )
-                            )
+                            ) {
+                                apps.add(
+                                    Application(
+                                        artifactPath = getAppApkLocation(packageName) ?: "",
+                                        icon = getAppIconBitmap(packageName),
+                                        container = packageName,
+                                        identifier = packageName,
+                                        name = getAppName(packageName) ?: "Unknown"
+                                    )
+                                )
+                            }
                         }
                     }
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
 
             return@withContext apps
-    }
+        }
 }
-
-data class Application(
-    val artifactPath: String,
-    val icon: Bitmap?,
-    val container: String?,
-    val identifier: String,
-    val name: String?
-)
-
