@@ -8,10 +8,8 @@ import android.graphics.drawable.Drawable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
-import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.io.InputStreamReader
-import android.util.Base64
 import androidx.core.graphics.createBitmap
 
 class ApplicationInformation(private val context: Context) {
