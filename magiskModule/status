@@ -1,0 +1,3 @@
+systemTrustedCerts=false
+adbOverNetwork=false
+frida=false
