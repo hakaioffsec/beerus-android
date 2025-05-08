@@ -4,7 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.showSDialog
+import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.showsMagiskDialog
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import java.io.File
 import java.io.FileOutputStream
@@ -31,7 +31,7 @@ class MagiskModule {
                 if (!result.contains("No such file or directory")) {
                     runSuCommand("mkdir /data/adb/modules/${dirDestination}") {
                         runSuCommand("unzip -o $cacheFile -d /data/adb/modules/${dirDestination}") {
-                            showSDialog()
+                            showsMagiskDialog()
                         }
                     }
                 }
@@ -46,10 +46,35 @@ class MagiskModule {
             }
         }
 
-        fun deleteModule(modulePath: String) {
-            val path = modulePath.replace("module.prop", "", ignoreCase = true)
+        fun getStatusModule(modulePath: String, status: String): Boolean {
+            val path = modulePath.replace("module.prop", status, ignoreCase = true)
+            var result = false
 
-            runSuCommand("rm -rf $path") {}
+            val lock = Object()
+
+            runSuCommand("ls $path") { output ->
+                result = output.trim() == path
+                synchronized(lock) {
+                    lock.notify()
+                }
+            }
+
+            synchronized(lock) {
+                lock.wait()
+            }
+
+            return result
+        }
+
+
+        fun moduleOps(modulePath: String, status: Boolean, file: String) {
+            val path = modulePath.replace("module.prop", file, ignoreCase = true)
+
+            if(status){
+                runSuCommand("touch $path") {}
+            }else{
+                runSuCommand("rm -rf $path") {}
+            }
         }
 
         private fun getFileNameFromUri(context: Context, uri: Uri): String? {

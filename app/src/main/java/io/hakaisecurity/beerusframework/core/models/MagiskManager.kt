@@ -11,15 +11,15 @@ class MagiskManager : ViewModel() {
         var showMagiskDialog by mutableStateOf(false)
             private set
 
-        fun showSDialog() {
+        fun showsMagiskDialog() {
             showMagiskDialog = true
         }
 
-        fun dismissDialog() {
+        fun dismissMagiskDialog() {
             showMagiskDialog = false
         }
 
-        fun confirmDialog() {
+        fun confirmMagiskDialog() {
             showMagiskDialog = false
             CommandUtils.runSuCommand("reboot") {}
         }
