@@ -1,3 +1,4 @@
 systemTrustedCerts=false
 adbOverNetwork=false
 frida=false
+proxy=:0

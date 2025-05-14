@@ -17,3 +17,6 @@ until [ "$(getprop sys.boot_completed)" -eq 1 ]; do
 done
 
 "beerusd" >> "$MODDIR/beerusd.log" 2>&1 &
+
+proxyProp=$(grep '^proxy=' "$STATUS_FILE" | cut -d'=' -f2)
+settings put global http_proxy "$proxyProp"
