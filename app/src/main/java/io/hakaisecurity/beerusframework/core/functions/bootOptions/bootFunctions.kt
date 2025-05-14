@@ -4,7 +4,7 @@ import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuC
 
 class bootFunctions {
     companion object{
-        fun changeProperties(propertyName: String, propertyValue: Boolean){
+        fun changeProperties(propertyName: String, propertyValue: Any){
             runSuCommand("sed -i 's/^$propertyName=.*/$propertyName=$propertyValue/' /data/adb/modules/beerusMagiskModule/status"){}
         }
 
