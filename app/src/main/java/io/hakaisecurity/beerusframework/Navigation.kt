@@ -5,7 +5,9 @@ import android.app.Activity
 import android.content.Context
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -53,46 +56,74 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import io.hakaisecurity.beerusframework.composables.ADBScreen
+import io.hakaisecurity.beerusframework.composables.BootScreen
 import io.hakaisecurity.beerusframework.composables.FridaScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
-import io.hakaisecurity.beerusframework.composables.SandboxScreen
+import io.hakaisecurity.beerusframework.composables.MagiskScreen
+import io.hakaisecurity.beerusframework.composables.ProxyScreen
+import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.moduleName
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateNavigationState
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasMagisk
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
 import io.hakaisecurity.beerusframework.ui.theme.Home
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
+import io.hakaisecurity.beerusframework.ui.theme.iconProxy
+import io.hakaisecurity.beerusframework.ui.theme.restart_alt
 
 @SuppressLint("NewApi")
 @Composable
-fun BaseNavigationComponent() {
+fun BaseNavigationComponent(modifier: Modifier) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dec() * 0.55f
+
+    var noMagisk by remember { mutableStateOf(false) }
+    var noModule by remember { mutableStateOf(false) }
 
     var selectedItem by remember { mutableStateOf("Home") }
 
     Column(
-        Modifier
+        modifier
             .fillMaxSize()
             .padding(5.dp, 50.dp, 0.dp, 0.dp)
             .zIndex(0f)
     ) {
         val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
+        val iconMagisk = ImageVector.vectorResource(id = R.drawable.magiskicon)
+        val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
 
-        val items = listOf("Home", "Frida Setup", "Sandbox")
-        val icons = listOf(Home, iconFrida, iconFrida)
-
+        val items = mutableListOf("Home", "Frida Setup", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Boot Options")
+        val icons = mutableListOf(Home, iconFrida, iconADB, iconProxy, iconMagisk, restart_alt)
         var iconIndex = 0
 
         items.forEach { item ->
             Row(Modifier.fillMaxWidth()) {
                 Button(
                     onClick = {
-                        updateNavigationState(item); updateanimationStartState(false); selectedItem =
-                        item
+                        if (!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")){
+                            noMagisk = true
+                        }else{
+                            if(!hasModule && item == "Boot Options"){
+                                noModule = true
+                            }else{
+                                updateNavigationState(item); updateanimationStartState(false); selectedItem = item
+                            }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (selectedItem == item) Color.Red else Color.Transparent
+                        containerColor =
+                            if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")){
+                                Color.Transparent
+                            }else{
+                                if (selectedItem == item){
+                                    Color.Red
+                                } else {
+                                    Color.Transparent
+                                }
+                            }
                     ),
                     modifier = Modifier
                         .padding(12.dp)
@@ -116,7 +147,15 @@ fun BaseNavigationComponent() {
                             Icon(
                                 imageVector = icons[iconIndex],
                                 contentDescription = "Icon",
-                                tint = if (selectedItem == item) Color.Red else Color.White,
+                                tint = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")){
+                                    Color(0xFF858585)
+                                }else{
+                                    if (selectedItem == item){
+                                        Color.Red
+                                    } else {
+                                        Color.White
+                                    }
+                                },
                                 modifier = Modifier.size(42.dp)
                             )
                         }
@@ -127,7 +166,7 @@ fun BaseNavigationComponent() {
                             text = item,
                             textAlign = TextAlign.Right,
                             fontSize = 17.sp,
-                            color = Color.White,
+                            color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")) Color(0xFF858585) else Color.White,
                             fontFamily = ibmFont
                         )
                     }
@@ -136,6 +175,32 @@ fun BaseNavigationComponent() {
 
             iconIndex++
         }
+    }
+
+    if (noMagisk) {
+        AlertDialog(
+            onDismissRequest = { noMagisk = false },
+            title = { Text("Note") },
+            text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
+            confirmButton = {
+                Button(onClick = { noMagisk = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    if (noModule) {
+        AlertDialog(
+            onDismissRequest = { noModule = false },
+            title = { Text("Note") },
+            text = { Text(text = "Hey, if you want to use this feature you may install our module on startup!", fontSize = 18.sp) },
+            confirmButton = {
+                Button(onClick = { noModule = false }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
 
@@ -151,9 +216,18 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
     val iconMenu = ImageVector.vectorResource(id = R.drawable.menu)
     val iconClose = ImageVector.vectorResource(id = R.drawable.close)
 
+    val transitionMenu by animateFloatAsState(
+        targetValue = if (animationStart) 0f else -configuration.screenWidthDp.dp.value * 2,
+        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        label = "transitionMenuAnimation"
+    )
+
     val transition by animateFloatAsState(
         targetValue = if (animationStart) screenWidth else 0f,
-        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
         label = "transitionAnimation"
     )
 
@@ -181,7 +255,9 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
         label = "colorAnimation"
     )
 
-    BaseNavigationComponent()
+    BaseNavigationComponent(modifier.graphicsLayer{
+        translationX = transitionMenu
+    })
 
     Box(modifier
         .fillMaxSize()
@@ -234,7 +310,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        updateanimationStartState(!animationStart)
+                        if(!inEditorMode) updateanimationStartState(!animationStart)
                     }
             )
         }
@@ -264,7 +340,10 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
             when (moduleName) {
                 "Home" -> HomeScreen(modifier)
                 "Frida Setup" -> FridaScreen(modifier, activity)
-                "Sandbox" -> SandboxScreen(modifier)
+                "Proxy Profiles" -> ProxyScreen(modifier, activity)
+                "ADB O/ Network" -> ADBScreen(modifier, activity)
+                "Magisk Manager" -> MagiskScreen(modifier, activity)
+                "Boot Options" -> BootScreen(modifier)
                 else -> HomeScreen(modifier)
             }
         }

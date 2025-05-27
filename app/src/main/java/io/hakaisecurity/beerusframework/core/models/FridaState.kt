@@ -18,6 +18,10 @@ class FridaState : ViewModel() {
         var fridaVersions = mutableStateListOf<String>()
         var currentFridaVersionFromList by mutableStateOf<String?>(null)
 
+        var packageName by mutableStateOf("")
+
+        var inEditorMode by mutableStateOf(false)
+
         init {
             checkFridaProcessState { newState ->
                 fridaRunningState = newState
@@ -30,6 +34,10 @@ class FridaState : ViewModel() {
 
         fun updateFridaDownloadedVersion(newVersion: String) {
             currentFridaVersionDownloaded = newVersion
+        }
+
+        fun updatePackageName(pkgName: String) {
+            packageName = pkgName
         }
     }
 }

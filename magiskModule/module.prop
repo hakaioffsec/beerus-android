@@ -1,0 +1,6 @@
+id=beerusMagiskModule
+name=Beerus Module
+version=v0.1
+versionCode=1
+author=Hakai
+description=The Beerus Magisk Module to enable the following features - ADB over Network | System Trusted Certs | Frida on Startup | Proxy Saving

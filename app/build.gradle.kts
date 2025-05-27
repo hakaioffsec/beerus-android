@@ -1,3 +1,8 @@
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import org.gradle.api.tasks.Copy
+import java.io.File
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -37,9 +42,160 @@ android {
     }
 }
 
+fun findLatestNdkBuild(): File {
+    val os = System.getProperty("os.name").lowercase()
+    val userHome = System.getProperty("user.home")
+    val env = System.getenv()
+    val sdkRoot = env["ANDROID_SDK_ROOT"] ?: env["ANDROID_HOME"] ?: "$userHome/Library/Android/sdk"
+    val ndkDir = File(sdkRoot, "ndk")
+    val ndkVersion = ndkDir
+        .listFiles { file -> file.isDirectory }?.maxOfOrNull { it.name }
+        ?: throw GradleException("No NDK versions found in $ndkDir")
+    val ndkBuildName = if (os.contains("windows")) "ndk-build.cmd" else "ndk-build"
+    val ndkBuildFile = File(ndkDir, "$ndkVersion/$ndkBuildName")
+    if (!ndkBuildFile.exists()) {
+        throw GradleException("ndk-build not found at: $ndkBuildFile")
+    }
+    return ndkBuildFile
+}
+
+val unzipFridaCoreLibs by tasks.registering {
+    val archs = listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+    val baseDir = layout.projectDirectory.dir("../fridaCore/jni/libs")
+
+    doLast {
+        archs.forEach { arch ->
+            val archDir = baseDir.dir(arch).asFile
+            val zipFile = File(archDir, "libfrida-core.zip")
+
+            if (zipFile.exists()) {
+                println("Unzipping for architecture: $arch")
+                project.copy {
+                    from(project.zipTree(zipFile))
+                    into(archDir)
+                }
+            }
+        }
+    }
+}
+
+val buildNativeFrida by tasks.registering(Exec::class) {
+    dependsOn(unzipFridaCoreLibs)
+
+    val ndkBuild = findLatestNdkBuild()
+    workingDir = layout.projectDirectory.dir("../fridaCore").asFile
+    commandLine = listOf(ndkBuild.absolutePath)
+}
+
+val buildNativeDeamon by tasks.registering(Exec::class) {
+    val ndkBuild = findLatestNdkBuild()
+    workingDir = layout.projectDirectory.dir("../beerusd").asFile
+    commandLine = listOf(ndkBuild.absolutePath)
+}
+
+val zipFolderTaskMagisk = tasks.register("zipModule") {
+    val inputMagiskDir = layout.projectDirectory.dir("../magiskModule")
+    val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
+
+    inputs.dir(inputMagiskDir)
+    outputs.file(outputMagiskZip)
+
+    doLast {
+        val inputMagisk: File = inputMagiskDir.asFile
+        val outputMagisk: File = outputMagiskZip.get().asFile
+        outputMagisk.parentFile.mkdirs()
+
+        ZipOutputStream(outputMagisk.outputStream()).use { zip ->
+            inputMagisk.walkTopDown().filter { it.isFile }.forEach { file ->
+                val entryName = file.relativeTo(inputMagisk).invariantSeparatorsPath
+                zip.putNextEntry(ZipEntry(entryName))
+                file.inputStream().copyTo(zip)
+                zip.closeEntry()
+            }
+        }
+    }
+}
+
+val zipFolderTaskFrida = tasks.register("zipFrida"){
+    dependsOn(buildNativeFrida)
+
+    val inputFridaDir = layout.projectDirectory.dir("../fridaCore/libs")
+    val outputFridaZip = layout.buildDirectory.file("generated/fridaCore.zip")
+
+    inputs.dir(inputFridaDir)
+    outputs.file(outputFridaZip)
+
+    doLast {
+        val inputFrida: File = inputFridaDir.asFile
+        val outputFrida: File = outputFridaZip.get().asFile
+        outputFrida.parentFile.mkdirs()
+
+        ZipOutputStream(outputFrida.outputStream()).use { zip ->
+            inputFrida.walkTopDown().filter { it.isFile }.forEach { file ->
+                val entryName = "libs/" + file.relativeTo(inputFrida).invariantSeparatorsPath
+                zip.putNextEntry(ZipEntry(entryName))
+                file.inputStream().copyTo(zip)
+                zip.closeEntry()
+            }
+        }
+    }
+}
+
+val zipFolderTaskDeamon = tasks.register("zipDeamon"){
+    dependsOn(buildNativeDeamon)
+
+    val inputDeamonDir = layout.projectDirectory.dir("../beerusd/libs")
+    val outputDeamonZip = layout.buildDirectory.file("generated/beerusd.zip")
+
+    inputs.dir(inputDeamonDir)
+    outputs.file(outputDeamonZip)
+
+    doLast {
+        val inputFrida: File = inputDeamonDir.asFile
+        val outputFrida: File = outputDeamonZip.get().asFile
+        outputFrida.parentFile.mkdirs()
+
+        ZipOutputStream(outputFrida.outputStream()).use { zip ->
+            inputFrida.walkTopDown().filter { it.isFile }.forEach { file ->
+                val entryName = "libs/" + file.relativeTo(inputFrida).invariantSeparatorsPath
+                zip.putNextEntry(ZipEntry(entryName))
+                file.inputStream().copyTo(zip)
+                zip.closeEntry()
+            }
+        }
+    }
+}
+
+android.applicationVariants.all {
+    val variant = this
+    val variantName = variant.name.replaceFirstChar(Char::uppercaseChar)
+
+    val copyZipsToAssets = tasks.register<Copy>("copyZipsToAssets$variantName") {
+        dependsOn(zipFolderTaskMagisk, zipFolderTaskFrida, zipFolderTaskDeamon)
+
+        val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
+        val outputFridaZip = layout.buildDirectory.file("generated/fridaCore.zip")
+
+        from(outputMagiskZip) {
+            rename { "beerusMagiskModule.zip" }
+        }
+
+        from(outputFridaZip) {
+            rename { "fridaCore.zip" }
+        }
+
+        into(variant.mergeAssetsProvider.get().outputDir)
+    }
+
+    variant.mergeAssetsProvider.configure {
+        dependsOn(copyZipsToAssets)
+    }
+}
+
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.tukaani:xz:1.9")
+    implementation("io.coil-kt:coil-compose:2.4.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
