@@ -62,6 +62,7 @@ import io.hakaisecurity.beerusframework.composables.FridaScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
 import io.hakaisecurity.beerusframework.composables.MagiskScreen
 import io.hakaisecurity.beerusframework.composables.ProxyScreen
+import io.hakaisecurity.beerusframework.composables.SandboxScreen
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.moduleName
@@ -71,6 +72,7 @@ import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasMagi
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
 import io.hakaisecurity.beerusframework.ui.theme.Home
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
+import io.hakaisecurity.beerusframework.ui.theme.iconPackage
 import io.hakaisecurity.beerusframework.ui.theme.iconProxy
 import io.hakaisecurity.beerusframework.ui.theme.restart_alt
 
@@ -95,8 +97,8 @@ fun BaseNavigationComponent(modifier: Modifier) {
         val iconMagisk = ImageVector.vectorResource(id = R.drawable.magiskicon)
         val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
 
-        val items = mutableListOf("Home", "Frida Setup", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Boot Options")
-        val icons = mutableListOf(Home, iconFrida, iconADB, iconProxy, iconMagisk, restart_alt)
+        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Boot Options")
+        val icons = mutableListOf(Home, iconFrida, iconPackage, iconADB, iconProxy, iconMagisk, restart_alt)
         var iconIndex = 0
 
         items.forEach { item ->
@@ -340,6 +342,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
             when (moduleName) {
                 "Home" -> HomeScreen(modifier)
                 "Frida Setup" -> FridaScreen(modifier, activity)
+                "Sandbox Exf/" -> SandboxScreen(modifier)
                 "Proxy Profiles" -> ProxyScreen(modifier, activity)
                 "ADB O/ Network" -> ADBScreen(modifier, activity)
                 "Magisk Manager" -> MagiskScreen(modifier, activity)

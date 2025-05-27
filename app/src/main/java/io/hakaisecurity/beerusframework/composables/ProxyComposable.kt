@@ -40,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -55,10 +54,8 @@ import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfil
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
-import io.hakaisecurity.beerusframework.ui.theme.Add
 import io.hakaisecurity.beerusframework.ui.theme.Trash
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
-import kotlin.collections.forEach
 
 @Composable
 fun ProxyScreen(modifier: Modifier, context: Context) {
