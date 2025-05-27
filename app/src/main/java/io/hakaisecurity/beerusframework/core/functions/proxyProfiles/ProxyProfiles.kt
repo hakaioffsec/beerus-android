@@ -1,13 +1,11 @@
 package io.hakaisecurity.beerusframework.core.functions.proxyProfiles
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.net.wifi.WifiManager
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
-import org.json.JSONArray
 
 object ProxyProfiles {
     data class ProxyData(
