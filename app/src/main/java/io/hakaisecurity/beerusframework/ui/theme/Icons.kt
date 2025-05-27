@@ -653,3 +653,65 @@ val iconProxy:  ImageVector
     }
 
 private var _iconProxy: ImageVector? = null
+
+val iconPackage: ImageVector
+    get() {
+        if (_iconPackage != null) {
+            return _iconPackage!!
+        }
+        _iconPackage = ImageVector.Builder(
+            name = "BoxModel",
+            defaultWidth = 15.dp,
+            defaultHeight = 15.dp,
+            viewportWidth = 15f,
+            viewportHeight = 15f
+        ).apply {
+            path(
+                fill = SolidColor(Color(0xFF000000)),
+                fillAlpha = 1.0f,
+                stroke = null,
+                strokeAlpha = 1.0f,
+                strokeLineWidth = 1.0f,
+                strokeLineCap = StrokeCap.Butt,
+                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineMiter = 1.0f,
+                pathFillType = PathFillType.EvenOdd
+            ) {
+                moveTo(1.99998f, 0.999976f)
+                curveTo(1.4477f, 1f, 1f, 1.4477f, 1f, 2f)
+                verticalLineTo(13f)
+                curveTo(1f, 13.5523f, 1.4477f, 14f, 2f, 14f)
+                horizontalLineTo(13f)
+                curveTo(13.5523f, 14f, 14f, 13.5523f, 14f, 13f)
+                verticalLineTo(1.99998f)
+                curveTo(14f, 1.4477f, 13.5523f, 1f, 13f, 1f)
+                horizontalLineTo(1.99998f)
+                close()
+                moveTo(1.99998f, 1.99998f)
+                lineTo(13f, 1.99998f)
+                verticalLineTo(13f)
+                horizontalLineTo(1.99998f)
+                verticalLineTo(1.99998f)
+                close()
+                moveTo(4.49996f, 3.99996f)
+                curveTo(4.2238f, 4f, 4f, 4.2238f, 4f, 4.5f)
+                verticalLineTo(10.5f)
+                curveTo(4f, 10.7761f, 4.2238f, 11f, 4.5f, 11f)
+                horizontalLineTo(10.5f)
+                curveTo(10.7761f, 11f, 11f, 10.7761f, 11f, 10.5f)
+                verticalLineTo(4.49996f)
+                curveTo(11f, 4.2238f, 10.7761f, 4f, 10.5f, 4f)
+                horizontalLineTo(4.49996f)
+                close()
+                moveTo(4.99996f, 9.99996f)
+                verticalLineTo(4.99996f)
+                horizontalLineTo(9.99996f)
+                verticalLineTo(9.99996f)
+                horizontalLineTo(4.99996f)
+                close()
+            }
+        }.build()
+        return _iconPackage!!
+    }
+
+private var _iconPackage: ImageVector? = null

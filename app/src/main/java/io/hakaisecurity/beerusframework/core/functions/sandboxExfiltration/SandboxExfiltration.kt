@@ -1,10 +1,8 @@
 package io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration
 
-import java.io.File
-import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
-import android.content.Context
 import android.util.Log
 import io.hakaisecurity.beerusframework.core.models.Application
+import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -13,8 +11,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.Response
+import java.io.File
 import java.io.IOException
-import java.util.UUID
 
 class SandboxExfiltration {
     private val client = OkHttpClient()
@@ -54,7 +52,7 @@ class SandboxExfiltration {
             if (tarResult.isBlank()) {
                 onComplete("fail")
             } else {
-                runSuCommand("chmod 655 $destinationPath.tar.gz") {
+                runSuCommand("chmod 655 $destinationPath.tar.gz && rm -rf $destinationPath") {
                     if (!isUSB) {
                         sendFile(fileName="$destinationPath.tar.gz", server=server) { R ->
                             runSuCommand("rm -rf $destinationPath") {}
@@ -69,7 +67,7 @@ class SandboxExfiltration {
         }
     }
 
-    fun exfiltrateFile(context: Context, app: Application, server:String, addBinary: Boolean, isUSB: Boolean, onComplete: (String) -> Unit) {
+    fun exfiltrateFile(app: Application, server:String, addBinary: Boolean, isUSB: Boolean, onComplete: (String) -> Unit) {
         val sourceFile = File(app.artifactPath).parent
 
         val destinationPath = "/data/local/tmp/${app.identifier}"

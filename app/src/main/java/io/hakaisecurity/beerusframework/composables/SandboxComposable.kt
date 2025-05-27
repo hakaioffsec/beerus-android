@@ -1,18 +1,13 @@
 package io.hakaisecurity.beerusframework.composables
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,7 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Checkbox
@@ -33,8 +28,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,9 +43,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,6 +51,8 @@ import io.hakaisecurity.beerusframework.R
 import io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration.ApplicationInformation
 import io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration.SandboxExfiltration
 import io.hakaisecurity.beerusframework.core.models.Application
+import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
+import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,25 +78,22 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
     var regexIsValid by remember { mutableStateOf(true) }
     val addressRegex = Regex("^(https?://)?((localhost)|(\\d{1,3}\\.){3}\\d{1,3}|([\\dA-Za-z-]+\\.)+[A-Za-z]{2,})(:(?:[1-9]\\d{0,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5]))?(\\/([\\w %&,.~\\-]+)?)*\\/?\$")
 
-
-
     fun getServer(): String {
         return if (server.startsWith("http") || server.startsWith("https")) {
-            "$server"
+            server
         } else {
             "http://$server"
         }
     }
 
     LaunchedEffect(Unit) {
-            applications = ApplicationInformation(context).fetchApplications("/data/data")
+        applications = ApplicationInformation(context).fetchApplications()
     }
 
     val filteredApps = applications.filter {
         (it.name?.contains(searchQuery, ignoreCase = true) ?: false) ||
-        it.identifier.contains(searchQuery, ignoreCase = true)
+                it.identifier.contains(searchQuery, ignoreCase = true)
     }
-
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -122,7 +112,7 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                 .padding(8.dp)
         ) {
 
-            Column() {
+            Column {
                 Row {
                     Text(
                         text = "Data storage on",
@@ -154,6 +144,7 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
+                enabled = !animationStart,
                 label = { Text("Buscar aplicativos", color = Color.White) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -168,7 +159,10 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                     unfocusedLabelColor = Color.Gray,
                     cursorColor = Color.White,
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    unfocusedTextColor = Color.White,
+                    disabledTextColor = Color.White,
+                    disabledLabelColor = Color.Gray,
+                    disabledBorderColor = Color.Gray
                 )
             )
 
@@ -181,8 +175,12 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                             .fillMaxWidth()
                             .padding(8.dp)
                             .clickable {
-                                selectedApp = app
-                                showSend = true
+                                if (!animationStart) {
+                                    selectedApp = app
+                                    showSend = true
+                                } else {
+                                    updateanimationStartState(false)
+                                }
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -231,11 +229,6 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
         )
     }
 
-
-
-
-
-
     if (showSend) {
         ModalBottomSheet (
             onDismissRequest = { showSend = false },
@@ -263,6 +256,8 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                         }
                     }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Row {
                         app.name?.let {
                             Text(it,
@@ -272,6 +267,8 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(1.dp))
 
                     Row {
                         app.identifier?.let {
@@ -287,14 +284,18 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Row {
+            Row(modifier = Modifier.padding(horizontal = 50.dp)) {
                 ToggleButtonTwoOptions("VPS", "USB", isUSB) {
-                    isUSB = !isUSB
+                    if (!animationStart) {
+                        isUSB = !isUSB
+                    } else {
+                        updateanimationStartState(false)
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            Row {
+            Row(modifier = Modifier.padding(horizontal = 15.dp)) {
                 OutlinedTextField(
                     value = if (!isUSB) server else "adb pull /data/local/tmp/{package_name}.tar.gz",
                     onValueChange = {
@@ -330,7 +331,7 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
             }
             Row (
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp)
             ){
                 Checkbox(
                     checked = binarySend,
@@ -354,22 +355,26 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                 Text(
                     text = "Add app binary on upload",
                     color = Color.White,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier.padding(start = 6.dp)
                 )
             }
             Button(onClick = {
+                if (!animationStart) {
                     selectedApp?.let { app ->
                         if (isUSB || regexIsValid) {
                             isloading = true
-                            sandboxExfiltration.exfiltrateFile(context, app, getServer(), binarySend, isUSB) { status ->
+                            sandboxExfiltration.exfiltrateFile(app, getServer(), binarySend, isUSB) { status ->
                                 isloading = false
                                 if (!isUSB) showSend = false
                             }
                         }
                     }
-                },
+                } else {
+                    updateanimationStartState(false)
+                }
+            },
                 shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(start = 15.dp, top = 0.dp, bottom = 10.dp, end = 15.dp),
                 enabled = !isloading,
                 colors = ButtonColors(
                     containerColor = Color.Red,

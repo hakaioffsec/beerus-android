@@ -8,9 +8,6 @@ import android.graphics.drawable.Drawable
 import io.hakaisecurity.beerusframework.core.models.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.DataOutputStream
-import java.io.InputStreamReader
 
 class ApplicationInformation(private val context: Context) {
 
@@ -61,56 +58,35 @@ class ApplicationInformation(private val context: Context) {
         }
     }
 
-    suspend fun fetchApplications(path: String): List<Application> =
+    suspend fun fetchApplications(): List<Application> =
         withContext(Dispatchers.IO) {
             val apps = mutableListOf<Application>()
-            val packagePattern = Regex("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$")
+            val packageManager = context.packageManager
 
-            val bannedTerms = listOf(".auto_generated_")
             val bannedPatterns = listOf(
                 Regex("com\\.android\\..*"),
                 Regex("com\\.google\\..*")
             )
+            val bannedTerms = listOf(".auto_generated_")
 
-            try {
-                val process = Runtime.getRuntime().exec("su")
-                DataOutputStream(process.outputStream).use { outputStream ->
-                    outputStream.writeBytes("ls $path\n")
-                    outputStream.writeBytes("exit\n")
-                    outputStream.flush()
+            val installedApps = packageManager.getInstalledApplications(android.content.pm.PackageManager.GET_META_DATA)
+                .filter { packageManager.getLaunchIntentForPackage(it.packageName) != null }
+                .filterNot { app ->
+                    bannedPatterns.any { it.matches(app.packageName) } || bannedTerms.any { app.packageName.contains(it) }
                 }
+                .sortedBy { it.loadLabel(packageManager).toString() }
 
-                process.waitFor()
-
-                BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) {
-                        if (line!!.isNotEmpty()) {
-                            val packageName = line!!
-
-                            val containsBannedTerm = bannedTerms.any { packageName.contains(it) }
-                            val matchesBannedPattern =
-                                bannedPatterns.any { it.matches(packageName) }
-
-                            if (!containsBannedTerm && !matchesBannedPattern && packagePattern.matches(
-                                    packageName
-                                )
-                            ) {
-                                apps.add(
-                                    Application(
-                                        artifactPath = getAppApkLocation(packageName) ?: "",
-                                        icon = getAppIconBitmap(packageName),
-                                        container = packageName,
-                                        identifier = packageName,
-                                        name = getAppName(packageName) ?: "Unknown"
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            for (app in installedApps) {
+                val packageName = app.packageName
+                apps.add(
+                    Application(
+                        artifactPath = getAppApkLocation(packageName) ?: "",
+                        icon = getAppIconBitmap(packageName),
+                        container = packageName,
+                        identifier = packageName,
+                        name = getAppName(packageName) ?: "Unknown"
+                    )
+                )
             }
 
             return@withContext apps
