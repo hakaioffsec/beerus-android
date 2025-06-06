@@ -61,6 +61,7 @@ import io.hakaisecurity.beerusframework.composables.BootScreen
 import io.hakaisecurity.beerusframework.composables.FridaScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
 import io.hakaisecurity.beerusframework.composables.MagiskScreen
+import io.hakaisecurity.beerusframework.composables.PropertiesScreen
 import io.hakaisecurity.beerusframework.composables.ProxyScreen
 import io.hakaisecurity.beerusframework.composables.SandboxScreen
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
@@ -96,16 +97,17 @@ fun BaseNavigationComponent(modifier: Modifier) {
         val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
         val iconMagisk = ImageVector.vectorResource(id = R.drawable.magiskicon)
         val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
+        val iconProperty = ImageVector.vectorResource(id = R.drawable.propertyicon)
 
-        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Boot Options")
-        val icons = mutableListOf(Home, iconFrida, iconPackage, iconADB, iconProxy, iconMagisk, restart_alt)
+        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Properties", "Boot Options")
+        val icons = mutableListOf(Home, iconFrida, iconPackage, iconADB, iconProxy, iconMagisk, iconProperty, restart_alt)
         var iconIndex = 0
 
         items.forEach { item ->
             Row(Modifier.fillMaxWidth()) {
                 Button(
                     onClick = {
-                        if (!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")){
+                        if (!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")){
                             noMagisk = true
                         }else{
                             if(!hasModule && item == "Boot Options"){
@@ -117,7 +119,7 @@ fun BaseNavigationComponent(modifier: Modifier) {
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor =
-                            if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")){
+                            if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && item == "Boot Options")){
                                 Color.Transparent
                             }else{
                                 if (selectedItem == item){
@@ -168,7 +170,7 @@ fun BaseNavigationComponent(modifier: Modifier) {
                             text = item,
                             textAlign = TextAlign.Right,
                             fontSize = 17.sp,
-                            color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")) Color(0xFF858585) else Color.White,
+                            color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && item == "Boot Options")) Color(0xFF858585) else Color.White,
                             fontFamily = ibmFont
                         )
                     }
@@ -346,6 +348,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                 "Proxy Profiles" -> ProxyScreen(modifier, activity)
                 "ADB O/ Network" -> ADBScreen(modifier, activity)
                 "Magisk Manager" -> MagiskScreen(modifier, activity)
+                "Properties" -> PropertiesScreen(modifier, activity)
                 "Boot Options" -> BootScreen(modifier)
                 else -> HomeScreen(modifier)
             }
