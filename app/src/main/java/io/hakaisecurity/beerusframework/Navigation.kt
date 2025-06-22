@@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -31,6 +34,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +45,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -61,6 +67,7 @@ import io.hakaisecurity.beerusframework.composables.BootScreen
 import io.hakaisecurity.beerusframework.composables.FridaScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
 import io.hakaisecurity.beerusframework.composables.MagiskScreen
+import io.hakaisecurity.beerusframework.composables.MemDumpScreen
 import io.hakaisecurity.beerusframework.composables.ProxyScreen
 import io.hakaisecurity.beerusframework.composables.SandboxScreen
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
@@ -72,6 +79,7 @@ import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasMagi
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
 import io.hakaisecurity.beerusframework.ui.theme.Home
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
+import io.hakaisecurity.beerusframework.ui.theme.iconMemory
 import io.hakaisecurity.beerusframework.ui.theme.iconPackage
 import io.hakaisecurity.beerusframework.ui.theme.iconProxy
 import io.hakaisecurity.beerusframework.ui.theme.restart_alt
@@ -87,40 +95,95 @@ fun BaseNavigationComponent(modifier: Modifier) {
 
     var selectedItem by remember { mutableStateOf("Home") }
 
-    Column(
-        modifier
+    val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
+    val iconMagisk = ImageVector.vectorResource(id = R.drawable.magiskicon)
+    val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
+
+    val listState = rememberLazyListState()
+    var isScrolling by remember { mutableStateOf(false) }
+    val scrollAlpha by animateFloatAsState(
+        targetValue = if (isScrolling) 1f else 0f,
+        animationSpec = tween(durationMillis = 500),
+        label = "scrollbarOpacity"
+    )
+
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) {
+            isScrolling = true
+        } else {
+            kotlinx.coroutines.delay(1000)
+            isScrolling = false
+        }
+    }
+
+    LazyColumn(
+        modifier = modifier
             .fillMaxSize()
-            .padding(5.dp, 50.dp, 0.dp, 0.dp)
+            .padding(start = 3.dp, end = 0.dp, bottom = 0.dp)
             .zIndex(0f)
+            .drawWithContent {
+                drawContent()
+
+                val layoutInfo = listState.layoutInfo
+                val totalItems = layoutInfo.totalItemsCount
+                val visibleItems = layoutInfo.visibleItemsInfo
+                val viewportHeight = size.height
+
+                if (totalItems > 0 && visibleItems.isNotEmpty()) {
+                    val averageItemHeight = visibleItems.map { it.size }.average().toFloat()
+                    val totalContentHeight = totalItems * averageItemHeight
+                    val maxScroll = totalContentHeight - viewportHeight
+
+                    val currentScroll = listState.firstVisibleItemIndex * averageItemHeight + listState.firstVisibleItemScrollOffset
+                    val proportion = if (maxScroll > 0f) (currentScroll / maxScroll).coerceIn(0f, 1f) else 0f
+
+                    val capsuleHeight = 24.dp.toPx()
+                    val capsuleWidth = 6.dp.toPx()
+                    val topPadding = 90.dp.toPx()
+                    val bottomPadding = 30.dp.toPx()
+                    val capsuleY = topPadding + proportion * (viewportHeight - capsuleHeight - topPadding - bottomPadding)
+
+                    drawRoundRect(
+                        color = Color.Red.copy(alpha = scrollAlpha),
+                        topLeft = Offset(2.dp.toPx(), capsuleY),
+                        size = Size(capsuleWidth, capsuleHeight),
+                        cornerRadius = CornerRadius(capsuleWidth / 2, capsuleWidth / 2)
+                    )
+                }
+            },
+        state = listState,
+        contentPadding = PaddingValues(top = 60.dp)
     ) {
-        val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
-        val iconMagisk = ImageVector.vectorResource(id = R.drawable.magiskicon)
-        val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
+        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "Memory Dump", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Boot Options")
+        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconADB, iconProxy, iconMagisk, restart_alt,Home, iconFrida, iconPackage, iconMemory, iconADB, iconProxy, iconMagisk, restart_alt)
 
-        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Boot Options")
-        val icons = mutableListOf(Home, iconFrida, iconPackage, iconADB, iconProxy, iconMagisk, restart_alt)
-        var iconIndex = 0
-
-        items.forEach { item ->
-            Row(Modifier.fillMaxWidth()) {
+        itemsIndexed(items) { index, item ->
+            Row(
+                modifier = if (index == items.lastIndex)
+                    Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 80.dp)
+                else
+                    Modifier.fillMaxWidth().padding(start = 8.dp)
+            ) {
                 Button(
                     onClick = {
                         if (!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")){
                             noMagisk = true
-                        }else{
-                            if(!hasModule && item == "Boot Options"){
+                        } else {
+                            if (!hasModule && item == "Boot Options") {
                                 noModule = true
-                            }else{
-                                updateNavigationState(item); updateanimationStartState(false); selectedItem = item
+                            } else {
+                                updateNavigationState(item)
+                                updateanimationStartState(false)
+                                selectedItem = item
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor =
-                            if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")){
+                            if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")) {
                                 Color.Transparent
-                            }else{
-                                if (selectedItem == item){
+                            } else {
+                                if (selectedItem == item) {
                                     Color.Red
                                 } else {
                                     Color.Transparent
@@ -129,11 +192,11 @@ fun BaseNavigationComponent(modifier: Modifier) {
                     ),
                     modifier = Modifier
                         .padding(12.dp)
-                        .defaultMinSize(minWidth = screenWidth.dp, minHeight = 1.dp),
-                    contentPadding = PaddingValues(0.dp, 0.dp, 0.dp, 0.dp),
+                        .defaultMinSize(minWidth = screenWidth.dp + 10.dp, minHeight = 1.dp),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Row(
-                        Modifier.width(screenWidth.dp),
+                        Modifier.width(screenWidth.dp + 10.dp),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -147,12 +210,12 @@ fun BaseNavigationComponent(modifier: Modifier) {
                                 .zIndex(10f)
                         ) {
                             Icon(
-                                imageVector = icons[iconIndex],
+                                imageVector = icons[index],
                                 contentDescription = "Icon",
-                                tint = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")){
+                                tint = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")) {
                                     Color(0xFF858585)
-                                }else{
-                                    if (selectedItem == item){
+                                } else {
+                                    if (selectedItem == item) {
                                         Color.Red
                                     } else {
                                         Color.White
@@ -162,10 +225,9 @@ fun BaseNavigationComponent(modifier: Modifier) {
                             )
                         }
 
-                        Spacer(modifier = Modifier.padding(16.dp, 0.dp, 0.dp, 0.dp))
-
                         Text(
                             text = item,
+                            modifier = Modifier.padding(8.dp, 0.dp, 0.dp, 0.dp),
                             textAlign = TextAlign.Right,
                             fontSize = 17.sp,
                             color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")) Color(0xFF858585) else Color.White,
@@ -174,8 +236,6 @@ fun BaseNavigationComponent(modifier: Modifier) {
                     }
                 }
             }
-
-            iconIndex++
         }
     }
 
@@ -343,6 +403,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                 "Home" -> HomeScreen(modifier)
                 "Frida Setup" -> FridaScreen(modifier, activity)
                 "Sandbox Exf/" -> SandboxScreen(modifier)
+                "Memory Dump" -> MemDumpScreen(modifier)
                 "Proxy Profiles" -> ProxyScreen(modifier, activity)
                 "ADB O/ Network" -> ADBScreen(modifier, activity)
                 "Magisk Manager" -> MagiskScreen(modifier, activity)

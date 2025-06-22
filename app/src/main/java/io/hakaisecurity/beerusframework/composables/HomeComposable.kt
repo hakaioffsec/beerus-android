@@ -67,11 +67,14 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                     .align(Alignment.CenterHorizontally)
                     .wrapContentSize()
             ) {
+                val imageWidth = (configuration.screenWidthDp * 0.60f).dp
+                val imageHeight = (imageWidth * (154f / 212f))
+
                 Image(
                     painter = painterResource(id = R.drawable.beerushome),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(width = 212.dp, height = 154.dp)
+                        .size(width = imageWidth, height = imageHeight)
                         .align(Alignment.Center)
                         .zIndex(2f)
                 )
@@ -108,17 +111,18 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                     text = "BEERUS\nframework",
                     color = Color.White,
                     textAlign = TextAlign.Center,
-                    fontSize = 28.sp,
+                    fontSize = 32.sp,
+                    lineHeight = 34.sp,
                     fontFamily = ibmFont,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
                 Text(
-                    text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel lorem ligula. Proin faucibus dolor erat, a ultricies ligula molestie scelerisque.",
+                    text = "Developed by the Hakai Offensive Security Research Team, your all-in-one toolkit for mobile penetration testing ≧◡≦",
                     color = Color.White,
                     textAlign = TextAlign.Center,
-                    fontSize = 12.sp,
+                    fontSize = 15.sp,
                     fontFamily = ibmFont,
                     fontWeight = FontWeight.Normal
                 )
@@ -129,7 +133,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                     text = "If you really know, you can hack.\nBSDaemon",
                     color = Color.White,
                     textAlign = TextAlign.Center,
-                    fontSize = 12.sp,
+                    fontSize = 15.sp,
                     fontFamily = ibmFont,
                     fontWeight = FontWeight.Normal,
                     modifier = Modifier.padding(bottom = 24.dp)

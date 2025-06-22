@@ -103,7 +103,7 @@ import java.io.File
 fun FridaScreen(modifier: Modifier, activity: Activity) {
     var expanded by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dec() * .25f
+    val screenHeight = configuration.screenHeightDp.dec() * .30f
 
     val borderRadius by animateFloatAsState(
         targetValue = if (animationStart) 16f else 0f,

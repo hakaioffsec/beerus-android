@@ -395,117 +395,6 @@ val Add: ImageVector
 
 private var _add: ImageVector? = null
 
-val apps: ImageVector
-    get() {
-        if (_apps != null) {
-            return _apps!!
-        }
-        _apps = ImageVector.Builder(
-            name = "Apps",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 960f,
-            viewportHeight = 960f
-        ).apply {
-            path(
-                fill = SolidColor(Color.Black),
-                fillAlpha = 1.0f,
-                stroke = null,
-                strokeAlpha = 1.0f,
-                strokeLineWidth = 1.0f,
-                strokeLineCap = StrokeCap.Butt,
-                strokeLineJoin = StrokeJoin.Miter,
-                strokeLineMiter = 1.0f,
-                pathFillType = PathFillType.NonZero
-            ) {
-                moveTo(240f, 800f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(160f, 720f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(240f, 640f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(320f, 720f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(240f, 800f)
-                moveToRelative(240f, 0f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(400f, 720f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(480f, 640f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(560f, 720f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(480f, 800f)
-                moveToRelative(240f, 0f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(640f, 720f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(720f, 640f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(800f, 720f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(720f, 800f)
-                moveTo(240f, 560f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(160f, 480f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(240f, 400f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(320f, 480f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(240f, 560f)
-                moveToRelative(240f, 0f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(400f, 480f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(480f, 400f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(560f, 480f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(480f, 560f)
-                moveToRelative(240f, 0f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(640f, 480f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(720f, 400f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(800f, 480f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(720f, 560f)
-                moveTo(240f, 320f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(160f, 240f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(240f, 160f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(320f, 240f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(240f, 320f)
-                moveToRelative(240f, 0f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(400f, 240f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(480f, 160f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(560f, 240f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(480f, 320f)
-                moveToRelative(240f, 0f)
-                quadToRelative(-33f, 0f, -56.5f, -23.5f)
-                reflectiveQuadTo(640f, 240f)
-                reflectiveQuadToRelative(23.5f, -56.5f)
-                reflectiveQuadTo(720f, 160f)
-                reflectiveQuadToRelative(56.5f, 23.5f)
-                reflectiveQuadTo(800f, 240f)
-                reflectiveQuadToRelative(-23.5f, 56.5f)
-                reflectiveQuadTo(720f, 320f)
-            }
-        }.build()
-        return _apps!!
-    }
-
-private var _apps: ImageVector? = null
-
 val restart_alt: ImageVector
     get() {
         if (_restart_alt != null) {
@@ -715,3 +604,181 @@ val iconPackage: ImageVector
     }
 
 private var _iconPackage: ImageVector? = null
+
+val iconWarning: ImageVector
+    get() {
+        if (_warning != null) {
+            return _warning!!
+        }
+        _warning = ImageVector.Builder(
+            name = "ExclamationTriangle",
+            defaultWidth = 16.dp,
+            defaultHeight = 16.dp,
+            viewportWidth = 16f,
+            viewportHeight = 16f
+        ).apply {
+            path(
+                fill = SolidColor(Color(0xFF000000)),
+                fillAlpha = 1.0f,
+                stroke = null,
+                strokeAlpha = 1.0f,
+                strokeLineWidth = 1.0f,
+                strokeLineCap = StrokeCap.Butt,
+                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineMiter = 1.0f,
+                pathFillType = PathFillType.NonZero
+            ) {
+                moveTo(7.938f, 2.016f)
+                arcTo(0.13f, 0.13f, 0f, isMoreThanHalf = false, isPositiveArc = true, 8.002f, 2f)
+                arcToRelative(0.13f, 0.13f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.063f, 0.016f)
+                arcToRelative(0.15f, 0.15f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.054f, 0.057f)
+                lineToRelative(6.857f, 11.667f)
+                curveToRelative(0.036f, 0.06f, 0.035f, 0.124f, 0.002f, 0.183f)
+                arcToRelative(0.2f, 0.2f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.054f, 0.06f)
+                arcToRelative(0.1f, 0.1f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.066f, 0.017f)
+                horizontalLineTo(1.146f)
+                arcToRelative(0.1f, 0.1f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.066f, -0.017f)
+                arcToRelative(0.2f, 0.2f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.054f, -0.06f)
+                arcToRelative(0.18f, 0.18f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.002f, -0.183f)
+                lineTo(7.884f, 2.073f)
+                arcToRelative(0.15f, 0.15f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.054f, -0.057f)
+                moveToRelative(1.044f, -0.45f)
+                arcToRelative(1.13f, 1.13f, 0f, isMoreThanHalf = false, isPositiveArc = false, -1.96f, 0f)
+                lineTo(0.165f, 13.233f)
+                curveToRelative(-0.457f, 0.778f, 0.091f, 1.767f, 0.98f, 1.767f)
+                horizontalLineToRelative(13.713f)
+                curveToRelative(0.889f, 0f, 1.438f, -0.99f, 0.98f, -1.767f)
+                close()
+            }
+            path(
+                fill = SolidColor(Color(0xFF000000)),
+                fillAlpha = 1.0f,
+                stroke = null,
+                strokeAlpha = 1.0f,
+                strokeLineWidth = 1.0f,
+                strokeLineCap = StrokeCap.Butt,
+                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineMiter = 1.0f,
+                pathFillType = PathFillType.NonZero
+            ) {
+                moveTo(7.002f, 12f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = true, isPositiveArc = true, 2f, 0f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = true, -2f, 0f)
+                moveTo(7.1f, 5.995f)
+                arcToRelative(0.905f, 0.905f, 0f, isMoreThanHalf = true, isPositiveArc = true, 1.8f, 0f)
+                lineToRelative(-0.35f, 3.507f)
+                arcToRelative(0.552f, 0.552f, 0f, isMoreThanHalf = false, isPositiveArc = true, -1.1f, 0f)
+                close()
+            }
+        }.build()
+        return _warning!!
+    }
+
+private var _warning: ImageVector? = null
+
+val iconMemory: ImageVector
+    get() {
+        if (_iconMemory != null) {
+            return _iconMemory!!
+        }
+        _iconMemory = ImageVector.Builder(
+            name = "Memory",
+            defaultWidth = 16.dp,
+            defaultHeight = 16.dp,
+            viewportWidth = 16f,
+            viewportHeight = 16f
+        ).apply {
+            path(
+                fill = SolidColor(Color(0xFF000000)),
+                fillAlpha = 1.0f,
+                stroke = null,
+                strokeAlpha = 1.0f,
+                strokeLineWidth = 1.0f,
+                strokeLineCap = StrokeCap.Butt,
+                strokeLineJoin = StrokeJoin.Miter,
+                strokeLineMiter = 1.0f,
+                pathFillType = PathFillType.NonZero
+            ) {
+                moveTo(1f, 3f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, -1f, 1f)
+                verticalLineToRelative(8f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, 1f, 1f)
+                horizontalLineToRelative(4.586f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, 0.707f, -0.293f)
+                lineToRelative(0.353f, -0.353f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.708f, 0f)
+                lineToRelative(0.353f, 0.353f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, 0.707f, 0.293f)
+                horizontalLineTo(15f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, 1f, -1f)
+                verticalLineTo(4f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, -1f, -1f)
+                close()
+                moveToRelative(0.5f, 1f)
+                horizontalLineToRelative(3f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.5f, 0.5f)
+                verticalLineToRelative(4f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.5f, 0.5f)
+                horizontalLineToRelative(-3f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.5f, -0.5f)
+                verticalLineToRelative(-4f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.5f, -0.5f)
+                moveToRelative(5f, 0f)
+                horizontalLineToRelative(3f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.5f, 0.5f)
+                verticalLineToRelative(4f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.5f, 0.5f)
+                horizontalLineToRelative(-3f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.5f, -0.5f)
+                verticalLineToRelative(-4f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.5f, -0.5f)
+                moveToRelative(4.5f, 0.5f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.5f, -0.5f)
+                horizontalLineToRelative(3f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.5f, 0.5f)
+                verticalLineToRelative(4f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.5f, 0.5f)
+                horizontalLineToRelative(-3f)
+                arcToRelative(0.5f, 0.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.5f, -0.5f)
+                close()
+                moveTo(2f, 10f)
+                verticalLineToRelative(2f)
+                horizontalLineTo(1f)
+                verticalLineToRelative(-2f)
+                close()
+                moveToRelative(2f, 0f)
+                verticalLineToRelative(2f)
+                horizontalLineTo(3f)
+                verticalLineToRelative(-2f)
+                close()
+                moveToRelative(2f, 0f)
+                verticalLineToRelative(2f)
+                horizontalLineTo(5f)
+                verticalLineToRelative(-2f)
+                close()
+                moveToRelative(3f, 0f)
+                verticalLineToRelative(2f)
+                horizontalLineTo(8f)
+                verticalLineToRelative(-2f)
+                close()
+                moveToRelative(2f, 0f)
+                verticalLineToRelative(2f)
+                horizontalLineToRelative(-1f)
+                verticalLineToRelative(-2f)
+                close()
+                moveToRelative(2f, 0f)
+                verticalLineToRelative(2f)
+                horizontalLineToRelative(-1f)
+                verticalLineToRelative(-2f)
+                close()
+                moveToRelative(2f, 0f)
+                verticalLineToRelative(2f)
+                horizontalLineToRelative(-1f)
+                verticalLineToRelative(-2f)
+                close()
+            }
+        }.build()
+        return _iconMemory!!
+    }
+
+private var _iconMemory: ImageVector? = null

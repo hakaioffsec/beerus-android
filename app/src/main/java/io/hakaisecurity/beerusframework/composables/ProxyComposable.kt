@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -59,6 +60,9 @@ import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 
 @Composable
 fun ProxyScreen(modifier: Modifier, context: Context) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dec() * .40f
+
     var newProxyName by remember { mutableStateOf("") }
     var newProxyCon by remember { mutableStateOf("") }
 
@@ -86,11 +90,12 @@ fun ProxyScreen(modifier: Modifier, context: Context) {
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
         modifier = modifier
             .padding(35.dp, 0.dp)
             .fillMaxSize()
     ) {
+        Spacer(modifier = modifier.height(screenHeight.dp))
+
         Button(
             onClick = {
                 if(!animationStart) {
