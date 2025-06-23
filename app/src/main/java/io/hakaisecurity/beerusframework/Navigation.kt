@@ -61,6 +61,7 @@ import io.hakaisecurity.beerusframework.composables.BootScreen
 import io.hakaisecurity.beerusframework.composables.FridaScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
 import io.hakaisecurity.beerusframework.composables.MagiskScreen
+import io.hakaisecurity.beerusframework.composables.ManifestScreen
 import io.hakaisecurity.beerusframework.composables.PropertiesScreen
 import io.hakaisecurity.beerusframework.composables.ProxyScreen
 import io.hakaisecurity.beerusframework.composables.SandboxScreen
@@ -76,6 +77,7 @@ import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 import io.hakaisecurity.beerusframework.ui.theme.iconPackage
 import io.hakaisecurity.beerusframework.ui.theme.iconProxy
 import io.hakaisecurity.beerusframework.ui.theme.restart_alt
+import io.hakaisecurity.beerusframework.ui.theme.FiletypeXml
 
 @SuppressLint("NewApi")
 @Composable
@@ -99,8 +101,8 @@ fun BaseNavigationComponent(modifier: Modifier) {
         val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
         val iconProperty = ImageVector.vectorResource(id = R.drawable.propertyicon)
 
-        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Properties", "Boot Options")
-        val icons = mutableListOf(Home, iconFrida, iconPackage, iconADB, iconProxy, iconMagisk, iconProperty, restart_alt)
+        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "ADB O/ Network", "Proxy Profiles", "Manifest", "Magisk Manager", "Properties", "Boot Options")
+        val icons = mutableListOf(Home, iconFrida, iconPackage, iconADB, iconProxy, FiletypeXml, iconMagisk, iconProperty, restart_alt)
         var iconIndex = 0
 
         items.forEach { item ->
@@ -169,7 +171,7 @@ fun BaseNavigationComponent(modifier: Modifier) {
                         Text(
                             text = item,
                             textAlign = TextAlign.Right,
-                            fontSize = 17.sp,
+                            fontSize = 14.sp,
                             color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && item == "Boot Options")) Color(0xFF858585) else Color.White,
                             fontFamily = ibmFont
                         )
@@ -346,6 +348,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                 "Frida Setup" -> FridaScreen(modifier, activity)
                 "Sandbox Exf/" -> SandboxScreen(modifier)
                 "Proxy Profiles" -> ProxyScreen(modifier, activity)
+                "Manifest" -> ManifestScreen(modifier)
                 "ADB O/ Network" -> ADBScreen(modifier, activity)
                 "Magisk Manager" -> MagiskScreen(modifier, activity)
                 "Properties" -> PropertiesScreen(modifier, activity)
