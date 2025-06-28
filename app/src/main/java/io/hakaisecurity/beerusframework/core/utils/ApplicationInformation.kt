@@ -1,4 +1,4 @@
-package io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration
+package io.hakaisecurity.beerusframework.core.utils
 
 import android.content.Context
 import android.graphics.Bitmap
