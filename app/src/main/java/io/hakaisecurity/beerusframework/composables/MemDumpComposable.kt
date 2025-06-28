@@ -2,9 +2,9 @@ package io.hakaisecurity.beerusframework.composables
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,12 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,17 +42,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.hakaisecurity.beerusframework.R
 import io.hakaisecurity.beerusframework.core.functions.memoryDump.MemoryDump.collectionTriagge
 import io.hakaisecurity.beerusframework.core.functions.memoryDump.ProcessInformation
-import io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration.ApplicationInformation
-import io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration.SandboxExfiltration
-import io.hakaisecurity.beerusframework.core.models.Application
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.models.Process
@@ -72,12 +66,10 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
     var exfiltrationResult by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var server by remember { mutableStateOf("") }
-    val sandboxExfiltration = remember { SandboxExfiltration() }
     var isloading by remember { mutableStateOf(false) }
     var isUSB by remember { mutableStateOf(false) }
 
     var showSend by remember { mutableStateOf(false) }
-    var deepDump by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
     var regexIsValid by remember { mutableStateOf(true) }
@@ -244,6 +236,7 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
                                 modifier = Modifier
                                     .width(70.dp)
                                     .height(70.dp)
+                                    .border(2.dp, Color.Red, CircleShape)
                             )
                         }
                     }

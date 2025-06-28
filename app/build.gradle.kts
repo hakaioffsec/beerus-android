@@ -1,7 +1,5 @@
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import org.gradle.api.tasks.Copy
-import java.io.File
 
 plugins {
     alias(libs.plugins.android.application)

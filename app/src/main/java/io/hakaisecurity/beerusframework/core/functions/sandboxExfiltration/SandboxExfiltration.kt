@@ -1,6 +1,5 @@
 package io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration
 
-import android.util.Log
 import io.hakaisecurity.beerusframework.core.models.Application
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import okhttp3.Call

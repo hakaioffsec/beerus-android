@@ -2,7 +2,6 @@ package io.hakaisecurity.beerusframework.core.functions.memoryDump
 
 import android.annotation.SuppressLint
 import android.content.Context
-import io.hakaisecurity.beerusframework.core.models.Process
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import okhttp3.Call
 import okhttp3.Callback

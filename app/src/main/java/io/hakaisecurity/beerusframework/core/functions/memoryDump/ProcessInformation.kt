@@ -7,9 +7,9 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import io.hakaisecurity.beerusframework.core.models.Process
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.CompletableDeferred
 
 class ProcessInformation (private val context: Context) {
     private fun getAppApkLocation(packageName: String): String? {
