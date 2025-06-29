@@ -1,6 +1,5 @@
 package io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration
 
-import android.util.Log
 import io.hakaisecurity.beerusframework.core.models.Application
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import okhttp3.Call
@@ -20,8 +19,7 @@ class SandboxExfiltration {
     private fun sendFile(fileName: String, server:String, onComplete: (String) -> Unit) {
         val sourceFile = File(fileName)
         if (!sourceFile.exists()) {
-            Log.d("{OUTPUT}","ERROR: Arquivo compactado não encontrado: $fileName")
-            onComplete("Arquivo compactado não encontrado: $fileName")
+            onComplete("Compressed file not found: $fileName")
         }
 
         val fileBody = sourceFile.asRequestBody("application/octet-stream".toMediaTypeOrNull())
@@ -30,17 +28,14 @@ class SandboxExfiltration {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.d("{OUTPUT}", "ERROR: Error ao enviar o arquivo")
-                onComplete("ERROR: Error ao enviar o arquivo")
+                onComplete("ERROR: Failed to send the file")
             }
 
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful) {
-                    Log.d("{OUTPUT}", "SUCCESS: Arquivo enviado com sucesso")
-                    onComplete("SUCCESS: Arquivo enviado com sucesso")
+                    onComplete("SUCCESS: File sent successfully")
                 } else {
-                    Log.d("{OUTPUT}", "ERROR: Error ao enviar o arquivo")
-                    onComplete("ERROR: Error ao enviar o arquivo")
+                    onComplete("ERROR: Failed to send the file")
                 }
             }
         })

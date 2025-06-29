@@ -1,7 +1,5 @@
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import org.gradle.api.tasks.Copy
-import java.io.File
 
 plugins {
     alias(libs.plugins.android.application)
@@ -87,12 +85,6 @@ val buildNativeFrida by tasks.registering(Exec::class) {
     commandLine = listOf(ndkBuild.absolutePath)
 }
 
-val buildNativeDeamon by tasks.registering(Exec::class) {
-    val ndkBuild = findLatestNdkBuild()
-    workingDir = layout.projectDirectory.dir("../beerusd").asFile
-    commandLine = listOf(ndkBuild.absolutePath)
-}
-
 val zipFolderTaskMagisk = tasks.register("zipModule") {
     val inputMagiskDir = layout.projectDirectory.dir("../magiskModule")
     val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
@@ -141,41 +133,15 @@ val zipFolderTaskFrida = tasks.register("zipFrida"){
     }
 }
 
-val zipFolderTaskDeamon = tasks.register("zipDeamon"){
-    dependsOn(buildNativeDeamon)
-
-    val inputDeamonDir = layout.projectDirectory.dir("../beerusd/libs")
-    val outputDeamonZip = layout.buildDirectory.file("generated/beerusd.zip")
-
-    inputs.dir(inputDeamonDir)
-    outputs.file(outputDeamonZip)
-
-    doLast {
-        val inputFrida: File = inputDeamonDir.asFile
-        val outputFrida: File = outputDeamonZip.get().asFile
-        outputFrida.parentFile.mkdirs()
-
-        ZipOutputStream(outputFrida.outputStream()).use { zip ->
-            inputFrida.walkTopDown().filter { it.isFile }.forEach { file ->
-                val entryName = "libs/" + file.relativeTo(inputFrida).invariantSeparatorsPath
-                zip.putNextEntry(ZipEntry(entryName))
-                file.inputStream().copyTo(zip)
-                zip.closeEntry()
-            }
-        }
-    }
-}
-
 android.applicationVariants.all {
     val variant = this
     val variantName = variant.name.replaceFirstChar(Char::uppercaseChar)
 
     val copyZipsToAssets = tasks.register<Copy>("copyZipsToAssets$variantName") {
-        dependsOn(zipFolderTaskMagisk, zipFolderTaskFrida, zipFolderTaskDeamon)
+        dependsOn(zipFolderTaskMagisk, zipFolderTaskFrida)
 
         val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
         val outputFridaZip = layout.buildDirectory.file("generated/fridaCore.zip")
-
         from(outputMagiskZip) {
             rename { "beerusMagiskModule.zip" }
         }
