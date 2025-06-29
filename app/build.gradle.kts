@@ -162,6 +162,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.tukaani:xz:1.9")
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("net.dongliu:apk-parser:2.6.10")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

@@ -605,77 +605,6 @@ val iconPackage: ImageVector
 
 private var _iconPackage: ImageVector? = null
 
-val iconWarning: ImageVector
-    get() {
-        if (_warning != null) {
-            return _warning!!
-        }
-        _warning = ImageVector.Builder(
-            name = "ExclamationTriangle",
-            defaultWidth = 16.dp,
-            defaultHeight = 16.dp,
-            viewportWidth = 16f,
-            viewportHeight = 16f
-        ).apply {
-            path(
-                fill = SolidColor(Color(0xFF000000)),
-                fillAlpha = 1.0f,
-                stroke = null,
-                strokeAlpha = 1.0f,
-                strokeLineWidth = 1.0f,
-                strokeLineCap = StrokeCap.Butt,
-                strokeLineJoin = StrokeJoin.Miter,
-                strokeLineMiter = 1.0f,
-                pathFillType = PathFillType.NonZero
-            ) {
-                moveTo(7.938f, 2.016f)
-                arcTo(0.13f, 0.13f, 0f, isMoreThanHalf = false, isPositiveArc = true, 8.002f, 2f)
-                arcToRelative(0.13f, 0.13f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.063f, 0.016f)
-                arcToRelative(0.15f, 0.15f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.054f, 0.057f)
-                lineToRelative(6.857f, 11.667f)
-                curveToRelative(0.036f, 0.06f, 0.035f, 0.124f, 0.002f, 0.183f)
-                arcToRelative(0.2f, 0.2f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.054f, 0.06f)
-                arcToRelative(0.1f, 0.1f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.066f, 0.017f)
-                horizontalLineTo(1.146f)
-                arcToRelative(0.1f, 0.1f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.066f, -0.017f)
-                arcToRelative(0.2f, 0.2f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.054f, -0.06f)
-                arcToRelative(0.18f, 0.18f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.002f, -0.183f)
-                lineTo(7.884f, 2.073f)
-                arcToRelative(0.15f, 0.15f, 0f, isMoreThanHalf = false, isPositiveArc = true, 0.054f, -0.057f)
-                moveToRelative(1.044f, -0.45f)
-                arcToRelative(1.13f, 1.13f, 0f, isMoreThanHalf = false, isPositiveArc = false, -1.96f, 0f)
-                lineTo(0.165f, 13.233f)
-                curveToRelative(-0.457f, 0.778f, 0.091f, 1.767f, 0.98f, 1.767f)
-                horizontalLineToRelative(13.713f)
-                curveToRelative(0.889f, 0f, 1.438f, -0.99f, 0.98f, -1.767f)
-                close()
-            }
-            path(
-                fill = SolidColor(Color(0xFF000000)),
-                fillAlpha = 1.0f,
-                stroke = null,
-                strokeAlpha = 1.0f,
-                strokeLineWidth = 1.0f,
-                strokeLineCap = StrokeCap.Butt,
-                strokeLineJoin = StrokeJoin.Miter,
-                strokeLineMiter = 1.0f,
-                pathFillType = PathFillType.NonZero
-            ) {
-                moveTo(7.002f, 12f)
-                arcToRelative(1f, 1f, 0f, isMoreThanHalf = true, isPositiveArc = true, 2f, 0f)
-                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = true, -2f, 0f)
-                moveTo(7.1f, 5.995f)
-                arcToRelative(0.905f, 0.905f, 0f, isMoreThanHalf = true, isPositiveArc = true, 1.8f, 0f)
-                lineToRelative(-0.35f, 3.507f)
-                arcToRelative(0.552f, 0.552f, 0f, isMoreThanHalf = false, isPositiveArc = true, -1.1f, 0f)
-                close()
-            }
-        }.build()
-        return _warning!!
-    }
-
-private var _warning: ImageVector? = null
-
 val iconMemory: ImageVector
     get() {
         if (_iconMemory != null) {
@@ -782,3 +711,126 @@ val iconMemory: ImageVector
     }
 
 private var _iconMemory: ImageVector? = null
+
+val iconWarning: ImageVector
+    get() {
+        if (_Warning != null) return _Warning!!
+
+        _Warning = ImageVector.Builder(
+            name = "Warning",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 960f,
+            viewportHeight = 960f
+        ).apply {
+            path(
+                fill = SolidColor(Color(0xFF000000))
+            ) {
+                moveToRelative(40f, -120f)
+                lineToRelative(440f, -760f)
+                lineToRelative(440f, 760f)
+                close()
+                moveToRelative(138f, -80f)
+                horizontalLineToRelative(604f)
+                lineTo(480f, 240f)
+                close()
+                moveToRelative(302f, -40f)
+                quadToRelative(17f, 0f, 28.5f, -11.5f)
+                reflectiveQuadTo(520f, 680f)
+                reflectiveQuadToRelative(-11.5f, -28.5f)
+                reflectiveQuadTo(480f, 640f)
+                reflectiveQuadToRelative(-28.5f, 11.5f)
+                reflectiveQuadTo(440f, 680f)
+                reflectiveQuadToRelative(11.5f, 28.5f)
+                reflectiveQuadTo(480f, 720f)
+                moveToRelative(-40f, -120f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-200f)
+                horizontalLineToRelative(-80f)
+                close()
+                moveToRelative(40f, -100f)
+            }
+        }.build()
+
+        return _Warning!!
+    }
+
+private var _Warning: ImageVector? = null
+
+val FiletypeXml: ImageVector
+    get() {
+        if (_FiletypeXml != null) return _FiletypeXml!!
+
+        _FiletypeXml = ImageVector.Builder(
+            name = "FiletypeXml",
+            defaultWidth = 16.dp,
+            defaultHeight = 16.dp,
+            viewportWidth = 16f,
+            viewportHeight = 16f
+        ).apply {
+            path(
+                fill = SolidColor(Color.Black)
+            ) {
+                moveTo(14f, 4.5f)
+                verticalLineTo(14f)
+                arcToRelative(2f, 2f, 0f, false, true, -2f, 2f)
+                verticalLineToRelative(-1f)
+                arcToRelative(1f, 1f, 0f, false, false, 1f, -1f)
+                verticalLineTo(4.5f)
+                horizontalLineToRelative(-2f)
+                arcTo(1.5f, 1.5f, 0f, false, true, 9.5f, 3f)
+                verticalLineTo(1f)
+                horizontalLineTo(4f)
+                arcToRelative(1f, 1f, 0f, false, false, -1f, 1f)
+                verticalLineToRelative(9f)
+                horizontalLineTo(2f)
+                verticalLineTo(2f)
+                arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
+                horizontalLineToRelative(5.5f)
+                close()
+                moveTo(3.527f, 11.85f)
+                horizontalLineToRelative(-0.893f)
+                lineToRelative(-0.823f, 1.439f)
+                horizontalLineToRelative(-0.036f)
+                lineTo(0.943f, 11.85f)
+                horizontalLineTo(0.012f)
+                lineToRelative(1.227f, 1.983f)
+                lineTo(0f, 15.85f)
+                horizontalLineToRelative(0.861f)
+                lineToRelative(0.853f, -1.415f)
+                horizontalLineToRelative(0.035f)
+                lineToRelative(0.85f, 1.415f)
+                horizontalLineToRelative(0.908f)
+                lineToRelative(-1.254f, -1.992f)
+                close()
+                moveToRelative(0.954f, 3.999f)
+                verticalLineToRelative(-2.66f)
+                horizontalLineToRelative(0.038f)
+                lineToRelative(0.952f, 2.159f)
+                horizontalLineToRelative(0.516f)
+                lineToRelative(0.946f, -2.16f)
+                horizontalLineToRelative(0.038f)
+                verticalLineToRelative(2.661f)
+                horizontalLineToRelative(0.715f)
+                verticalLineTo(11.85f)
+                horizontalLineToRelative(-0.8f)
+                lineToRelative(-1.14f, 2.596f)
+                horizontalLineToRelative(-0.025f)
+                lineTo(4.58f, 11.85f)
+                horizontalLineToRelative(-0.806f)
+                verticalLineToRelative(3.999f)
+                close()
+                moveToRelative(4.71f, -0.674f)
+                horizontalLineToRelative(1.696f)
+                verticalLineToRelative(0.674f)
+                horizontalLineTo(8.4f)
+                verticalLineTo(11.85f)
+                horizontalLineToRelative(0.791f)
+                close()
+            }
+        }.build()
+
+        return _FiletypeXml!!
+    }
+
+private var _FiletypeXml: ImageVector? = null
