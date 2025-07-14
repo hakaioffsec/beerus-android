@@ -21,10 +21,12 @@ TARGET_UID=$(pm list packages -U | grep io.hakaisecurity.beerusframework | awk -
 
 if [ ! -z "$TARGET_UID" ]; then
     dbAgent /data/adb/magisk.db "UPDATE policies SET notification=0 WHERE uid=$TARGET_UID;"
+    sqlite3 /data/adb/magisk.db "UPDATE policies SET notification=0 WHERE uid=$TARGET_UID;"
 fi
 
 # set namespace to global
 dbAgent /data/adb/magisk.db "UPDATE settings SET value='0' WHERE key='mnt_ns';"
+sqlite3 /data/adb/magisk.db "UPDATE settings SET value='0' WHERE key='mnt_ns';"
 
 proxyProp=$(grep '^proxy=' "$STATUS_FILE" | cut -d'=' -f2)
 settings put global http_proxy "$proxyProp"
