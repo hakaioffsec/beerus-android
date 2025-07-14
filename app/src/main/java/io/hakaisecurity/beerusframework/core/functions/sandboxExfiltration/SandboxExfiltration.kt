@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.Response
+import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 
@@ -82,6 +83,38 @@ class SandboxExfiltration {
                     }
                 }
             }
+        }
+    }
+
+    fun verify(server: String, isUSB: Boolean, onComplete: (Boolean) -> Unit) {
+        if (isUSB) {
+            onComplete(true)
+            return
+        } else {
+            val request = Request.Builder().url("$server/check").get().build()
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    onComplete(false)
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    if (response.isSuccessful) {
+                        val jsonBody = response.body?.string()
+                        val json = JSONObject(jsonBody)
+                        if (json.has("app")) {
+                            if (json.getString("app") == "Beerus Server") {
+                                onComplete(true)
+                                return
+                            }
+                        }
+                        onComplete(false)
+                        return
+                    } else {
+                        onComplete(false)
+                        return
+                    }
+                }
+            })
         }
     }
 }

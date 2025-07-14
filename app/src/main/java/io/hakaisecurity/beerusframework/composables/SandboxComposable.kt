@@ -1,5 +1,9 @@
 package io.hakaisecurity.beerusframework.composables
 
+
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -236,7 +242,7 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
             onDismissRequest = { showSend = false },
             sheetState = sheetState,
             containerColor = Color.Black,
-            contentColor = Color.Black
+            contentColor = Color.Black,
         ) {
             Column  (
                 modifier = Modifier
@@ -307,7 +313,10 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                     },
                     isError = !regexIsValid,
                     supportingText = {
-                        if (!regexIsValid) Text("Ex: 192.168.1.10:9032")
+                        Text(
+                            "Ex: 192.168.1.10:9032",
+                            modifier = Modifier.alpha(if (regexIsValid) 0f else 01f)
+                        )
                     },
                     label = { Text(if (!isUSB) "VPS Host" else "Pc Command", color = if (!isUSB) Color.White else Color.Gray) },
                     modifier = Modifier
@@ -366,9 +375,18 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                     selectedApp?.let { app ->
                         if (isUSB || regexIsValid) {
                             isloading = true
-                            sandboxExfiltration.exfiltrateFile(app, getServer(), binarySend, isUSB) { status ->
-                                isloading = false
-                                if (!isUSB) showSend = false
+                            sandboxExfiltration.verify(getServer(), isUSB) { isBeerusServer ->
+                                if (isBeerusServer) {
+                                    sandboxExfiltration.exfiltrateFile(app, getServer(), binarySend, isUSB) { status ->
+                                        isloading = false
+                                        if (!isUSB) showSend = false
+                                    }
+                                } else {
+                                    Handler(Looper.getMainLooper()).post {
+                                        Toast.makeText(context, "Something went wrong, check if the beerus server is open.", Toast.LENGTH_SHORT).show()
+                                    }
+                                    isloading = false
+                                }
                             }
                         }
                     }
