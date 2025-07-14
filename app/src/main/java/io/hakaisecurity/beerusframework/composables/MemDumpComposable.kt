@@ -1,5 +1,8 @@
 package io.hakaisecurity.beerusframework.composables
 
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -47,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.core.functions.memoryDump.MemoryDump.collectionTriagge
+import io.hakaisecurity.beerusframework.core.functions.memoryDump.MemoryDump.verify
 import io.hakaisecurity.beerusframework.core.functions.memoryDump.ProcessInformation
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
@@ -289,7 +294,10 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
                     },
                     isError = !regexIsValid,
                     supportingText = {
-                        if (!regexIsValid) Text("Ex: 192.168.1.10:9032")
+                        Text(
+                            "Ex: 192.168.1.10:9032",
+                            modifier = Modifier.alpha(if (regexIsValid) 0f else 1f)
+                        )
                     },
                     label = { Text(if (!isUSB) "VPS Host" else "Pc Command", color = if (!isUSB) Color.White else Color.Gray) },
                     modifier = Modifier
@@ -340,9 +348,18 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
                     selectedApp?.let { app ->
                         if (isUSB || regexIsValid) {
                             isloading = true
-                            collectionTriagge(context, getServer(), isUSB, app.pid) { status ->
-                                isloading = false
-                                if (!isUSB) showSend = false
+                            verify(getServer(), isUSB) { isBeerusServer->
+                                if(isBeerusServer) {
+                                    collectionTriagge(context, getServer(), isUSB, app.pid) { status ->
+                                        isloading = false
+                                        if (!isUSB) showSend = false
+                                    }
+                                } else {
+                                    Handler(Looper.getMainLooper()).post {
+                                        Toast.makeText(context, "Something went wrong, check if the beerus server is open.", Toast.LENGTH_SHORT).show()
+                                    }
+                                    isloading = false
+                                }
                             }
                         }
                     }
