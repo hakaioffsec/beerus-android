@@ -1,5 +1,8 @@
 package io.hakaisecurity.beerusframework.composables
 
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -47,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.core.functions.memoryDump.MemoryDump.collectionTriagge
+import io.hakaisecurity.beerusframework.core.functions.memoryDump.MemoryDump.verify
 import io.hakaisecurity.beerusframework.core.functions.memoryDump.ProcessInformation
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
@@ -340,9 +344,18 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
                     selectedApp?.let { app ->
                         if (isUSB || regexIsValid) {
                             isloading = true
-                            collectionTriagge(context, getServer(), isUSB, app.pid) { status ->
-                                isloading = false
-                                if (!isUSB) showSend = false
+                            verify(getServer(), isUSB) { isBeerusServer->
+                                if(isBeerusServer) {
+                                    collectionTriagge(context, getServer(), isUSB, app.pid) { status ->
+                                        isloading = false
+                                        if (!isUSB) showSend = false
+                                    }
+                                } else {
+                                    Handler(Looper.getMainLooper()).post {
+                                        Toast.makeText(context, "Something went wrong, check if the beerus server is open.", Toast.LENGTH_SHORT).show()
+                                    }
+                                    isloading = false
+                                }
                             }
                         }
                     }
