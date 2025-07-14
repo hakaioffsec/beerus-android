@@ -32,6 +32,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -85,10 +86,12 @@ import io.hakaisecurity.beerusframework.ui.theme.iconPackage
 import io.hakaisecurity.beerusframework.ui.theme.iconProxy
 import io.hakaisecurity.beerusframework.ui.theme.restart_alt
 import io.hakaisecurity.beerusframework.ui.theme.FiletypeXml
+import androidx.core.net.toUri
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmMagiskModuleInstallerDialog
 
 @SuppressLint("NewApi")
 @Composable
-fun BaseNavigationComponent(modifier: Modifier) {
+fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dec() * 0.55f
 
@@ -133,18 +136,21 @@ fun BaseNavigationComponent(modifier: Modifier) {
                 val viewportHeight = size.height
 
                 if (totalItems > 0 && visibleItems.isNotEmpty()) {
-                    val averageItemHeight = visibleItems.map { it.size }.average().toFloat()
-                    val totalContentHeight = totalItems * averageItemHeight
+                    val firstItemHeight = visibleItems.first().size.toFloat()
+                    val totalContentHeight = (totalItems+1) * firstItemHeight
                     val maxScroll = totalContentHeight - viewportHeight
 
-                    val currentScroll = listState.firstVisibleItemIndex * averageItemHeight + listState.firstVisibleItemScrollOffset
-                    val proportion = if (maxScroll > 0f) (currentScroll / maxScroll).coerceIn(0f, 1f) else 0f
+                    val currentScroll =
+                        listState.firstVisibleItemIndex * firstItemHeight + listState.firstVisibleItemScrollOffset
+                    val proportion =
+                        if (maxScroll > 0f) (currentScroll / maxScroll).coerceIn(0f, 1f) else 0f
 
                     val capsuleHeight = 24.dp.toPx()
                     val capsuleWidth = 6.dp.toPx()
                     val topPadding = 90.dp.toPx()
                     val bottomPadding = 30.dp.toPx()
-                    val capsuleY = topPadding + proportion * (viewportHeight - capsuleHeight - topPadding - bottomPadding)
+                    val capsuleY =
+                        topPadding + proportion * (viewportHeight - capsuleHeight - topPadding - bottomPadding)
 
                     drawRoundRect(
                         color = Color.Red.copy(alpha = scrollAlpha),
@@ -158,21 +164,25 @@ fun BaseNavigationComponent(modifier: Modifier) {
         contentPadding = PaddingValues(top = 60.dp)
     ) {
         val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Properties", "Boot Options")
-        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconMagisk, restart_alt,Home, iconFrida, iconPackage, iconMemory, iconADB, iconProxy, iconMagisk, iconProperty, restart_alt)
+        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconMagisk, iconProperty, restart_alt)
 
         itemsIndexed(items) { index, item ->
             Row(
                 modifier = if (index == items.lastIndex)
-                    Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 80.dp)
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, bottom = 80.dp)
                 else
-                    Modifier.fillMaxWidth().padding(start = 8.dp)
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
             ) {
                 Button(
                     onClick = {
                         if (!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")){
                             noMagisk = true
                         } else {
-                            if (!hasModule && item == "Boot Options") {
+                            if (!hasModule && (item == "Boot Options" || item == "Properties")) {
                                 noModule = true
                             } else {
                                 updateNavigationState(item)
@@ -215,7 +225,7 @@ fun BaseNavigationComponent(modifier: Modifier) {
                             Icon(
                                 imageVector = icons[index],
                                 contentDescription = "Icon",
-                                tint = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && item == "Boot Options")) {
+                                tint = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) {
                                     Color(0xFF858585)
                                 } else {
                                     if (selectedItem == item) {
@@ -233,7 +243,7 @@ fun BaseNavigationComponent(modifier: Modifier) {
                             modifier = Modifier.padding(8.dp, 0.dp, 0.dp, 0.dp),
                             textAlign = TextAlign.Right,
                             fontSize = 14.sp,
-                            color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && item == "Boot Options")) Color(0xFF858585) else Color.White,
+                            color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) Color(0xFF858585) else Color.White,
                             fontFamily = ibmFont
                         )
                     }
@@ -248,8 +258,19 @@ fun BaseNavigationComponent(modifier: Modifier) {
             title = { Text("Note") },
             text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
             confirmButton = {
-                Button(onClick = { noMagisk = false }) {
+                Button(onClick = {
+                    noMagisk = false
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                        data = "https://topjohnwu.github.io/Magisk/".toUri()
+                    }
+                    context.startActivity(intent)
+                }) {
                     Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noMagisk = false }) {
+                    Text("Do After", fontFamily = ibmFont)
                 }
             }
         )
@@ -259,10 +280,18 @@ fun BaseNavigationComponent(modifier: Modifier) {
         AlertDialog(
             onDismissRequest = { noModule = false },
             title = { Text("Note") },
-            text = { Text(text = "Hey, if you want to use this feature you may install our module on startup!", fontSize = 18.sp) },
+            text = { Text(text = "Hey, if you want to use this feature you may install our module!", fontSize = 18.sp) },
             confirmButton = {
-                Button(onClick = { noModule = false }) {
-                    Text("OK")
+                Button(onClick = {
+                    noModule = false
+                    confirmMagiskModuleInstallerDialog(context)
+                }) {
+                    Text("Install")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noModule = false }) {
+                    Text("Do After", fontFamily = ibmFont)
                 }
             }
         )
@@ -320,7 +349,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
         label = "colorAnimation"
     )
 
-    BaseNavigationComponent(modifier.graphicsLayer{
+    BaseNavigationComponent(context, modifier.graphicsLayer{
         translationX = transitionMenu
     })
 
@@ -375,7 +404,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        if(!inEditorMode) updateanimationStartState(!animationStart)
+                        if (!inEditorMode) updateanimationStartState(!animationStart)
                     }
             )
         }

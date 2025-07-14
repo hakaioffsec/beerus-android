@@ -6,9 +6,14 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 class AutoInject {
     companion object {
+        private val scriptCache = ConcurrentHashMap<String, String>()
+        private var lastCacheUpdate = 0L
+        private const val CACHE_EXPIRY_MS = 5000L
+
         fun injectFridaCore(context: Context, packageName: String, script: String) {
             val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
             if (launchIntent != null) {
@@ -24,26 +29,56 @@ class AutoInject {
         }
 
         fun getScriptsContent(context: Context): Map<String, String> {
-            val result = mutableMapOf<String, String>()
             val scriptsDir = File(context.filesDir, "scripts")
+            val currentTime = System.currentTimeMillis()
+
+            if (currentTime - lastCacheUpdate < CACHE_EXPIRY_MS && scriptCache.isNotEmpty()) {
+                return scriptCache.toMap()
+            }
+
+            scriptCache.clear()
 
             if (!scriptsDir.exists()) {
                 scriptsDir.mkdir()
+                return emptyMap()
             }
 
             if (scriptsDir.exists() && scriptsDir.isDirectory) {
                 scriptsDir.listFiles()?.forEach { file ->
                     if (file.isFile) {
                         try {
-                            result[file.name] = file.readText()
+                            val content = file.readText()
+                            scriptCache[file.name] = content
                         } catch (e: Exception) {
-                            result[file.name] = "Error reading file: ${e.message}"
+                            scriptCache[file.name] = "Error reading file: ${e.message}"
                         }
                     }
                 }
             }
 
-            return result
+            lastCacheUpdate = currentTime
+            return scriptCache.toMap()
+        }
+
+        fun getScriptContent(context: Context, scriptName: String): String? {
+            if (scriptCache.containsKey(scriptName)) {
+                return scriptCache[scriptName]
+            }
+
+            val scriptsFullPath = File(context.filesDir, "scripts").absolutePath + "/" + scriptName
+            val file = File(scriptsFullPath)
+
+            return if (file.exists()) {
+                try {
+                    val content = file.readText()
+                    scriptCache[scriptName] = content
+                    content
+                } catch (e: Exception) {
+                    "Error reading file: ${e.message}"
+                }
+            } else {
+                null
+            }
         }
 
         fun saveScript(context: Context, script: String, content: String) {
@@ -56,12 +91,15 @@ class AutoInject {
                 }
 
                 file.writeText(content)
+
+                scriptCache[script] = content
+
             } catch (e: Exception) {
-                println("Error saving script")
+                println("Error saving script: ${e.message}")
             }
         }
 
-        fun deleteScript(context: Context, script: String){
+        fun deleteScript(context: Context, script: String) {
             try {
                 val scriptsFullPath = File(context.filesDir, "scripts").absolutePath + "/" + script
                 val file = File(scriptsFullPath)
@@ -69,8 +107,11 @@ class AutoInject {
                 if (file.exists()) {
                     file.delete()
                 }
+
+                scriptCache.remove(script)
+
             } catch (e: Exception) {
-                println("Error deleting script")
+                println("Error deleting script: ${e.message}")
             }
         }
 

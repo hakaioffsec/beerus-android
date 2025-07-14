@@ -118,4 +118,32 @@ object ProxyProfiles {
             e.printStackTrace()
         }
     }
+
+    fun editProfile(context: Context, oldProfile: ProxyData, newProfile: ProxyData) {
+        val fileName = "proxyLists.json"
+        val file = File(context.filesDir, fileName)
+
+        try {
+            if (file.exists()) {
+                val jsonObject = JSONObject(file.readText())
+                val connectionsArray = jsonObject.getJSONArray("connections")
+
+                for (i in 0 until connectionsArray.length()) {
+                    val obj = connectionsArray.getJSONObject(i)
+                    if (obj.getString("name") == oldProfile.name &&
+                        obj.getString("conString") == oldProfile.conString) {
+
+                        obj.put("name", newProfile.name)
+                        obj.put("conString", newProfile.conString)
+                        obj.put("selected", newProfile.selected)
+                        break
+                    }
+                }
+
+                file.writeText(jsonObject.toString(4))
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
 }

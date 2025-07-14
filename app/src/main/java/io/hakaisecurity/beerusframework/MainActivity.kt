@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectMagisk
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectMagiskModuleInstalled
 import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.getFridaVersions
@@ -102,11 +103,11 @@ class MainActivity : ComponentActivity() {
 fun MagikModuleInstallDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Reboot?", fontFamily = ibmFont) },
-        text = { Text("Beerus need to reboot to perform module actions", fontFamily = ibmFont) },
+        title = { Text("Note") },
+        text = { Text(text = "For the best experience with this framework, please consider installing our module.", fontSize = 18.sp) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Reboot", fontFamily = ibmFont)
+                Text("Install", fontFamily = ibmFont)
             }
         },
         dismissButton = {

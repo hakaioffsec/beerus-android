@@ -130,7 +130,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 Spacer(modifier = Modifier.weight(1f))
 
                 Text(
-                    text = "If you really know, you can hack.\nBSDaemon",
+                    text = "Attack to Protect!",
                     color = Color.White,
                     textAlign = TextAlign.Center,
                     fontSize = 15.sp,

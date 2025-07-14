@@ -133,21 +133,57 @@ val zipFolderTaskFrida = tasks.register("zipFrida"){
     }
 }
 
+val buildNativeDbAgent by tasks.registering(Exec::class) {
+    val ndkBuild = findLatestNdkBuild()
+    workingDir = layout.projectDirectory.dir("../dbAgent").asFile
+    commandLine = listOf(ndkBuild.absolutePath)
+}
+
+val zipFolderTaskDbAgent = tasks.register("zipDbAgent") {
+    dependsOn(buildNativeDbAgent)
+
+    val inputDbAgentDir = layout.projectDirectory.dir("../dbAgent/libs")
+    val outputDbAgentZip = layout.buildDirectory.file("generated/dbAgent.zip")
+
+    inputs.dir(inputDbAgentDir)
+    outputs.file(outputDbAgentZip)
+
+    doLast {
+        val inputDbAgent: File = inputDbAgentDir.asFile
+        val outputDbAgent: File = outputDbAgentZip.get().asFile
+        outputDbAgent.parentFile.mkdirs()
+
+        ZipOutputStream(outputDbAgent.outputStream()).use { zip ->
+            inputDbAgent.walkTopDown().filter { it.isFile }.forEach { file ->
+                val entryName = "libs/" + file.relativeTo(inputDbAgent).invariantSeparatorsPath
+                zip.putNextEntry(ZipEntry(entryName))
+                file.inputStream().copyTo(zip)
+                zip.closeEntry()
+            }
+        }
+    }
+}
+
 android.applicationVariants.all {
     val variant = this
     val variantName = variant.name.replaceFirstChar(Char::uppercaseChar)
 
     val copyZipsToAssets = tasks.register<Copy>("copyZipsToAssets$variantName") {
-        dependsOn(zipFolderTaskMagisk, zipFolderTaskFrida)
+        dependsOn(zipFolderTaskMagisk, zipFolderTaskFrida, zipFolderTaskDbAgent)
 
         val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
         val outputFridaZip = layout.buildDirectory.file("generated/fridaCore.zip")
+        val outputDbAgentZip = layout.buildDirectory.file("generated/dbAgent.zip")
         from(outputMagiskZip) {
             rename { "beerusMagiskModule.zip" }
         }
 
         from(outputFridaZip) {
             rename { "fridaCore.zip" }
+        }
+
+        from(outputDbAgentZip) {
+            rename { "dbAgent.zip" }
         }
 
         into(variant.mergeAssetsProvider.get().outputDir)

@@ -50,11 +50,13 @@ import io.hakaisecurity.beerusframework.core.functions.bootOptions.bootFunctions
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.ProxyData
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.addProfile
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.deleteProxy
+import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.editProfile
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.getProfiles
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.selectProfile
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
+import io.hakaisecurity.beerusframework.ui.theme.Edit
 import io.hakaisecurity.beerusframework.ui.theme.Trash
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 
@@ -71,6 +73,10 @@ fun ProxyScreen(modifier: Modifier, context: Context) {
 
     val proxies = proxiesState.value
     var showProfileDialog by remember { mutableStateOf(false) }
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var proxyToEdit by remember { mutableStateOf("") }
+    var proxyEditValue by remember { mutableStateOf("") }
 
     fun refreshProxies() {
         proxiesState.value = getProfiles(context)
@@ -197,37 +203,73 @@ fun ProxyScreen(modifier: Modifier, context: Context) {
                         Row(
                             modifier = modifier
                                 .fillMaxWidth()
-                                .padding(16.dp, 10.dp)
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() }
-                                ) {
-                                    if(!animationStart) {
-                                        deleteProxy(context, proxy)
-                                        refreshProxies()
-                                        if (selectedProxy == proxy.conString) selectedProxy = null
-                                    }else {
-                                        updateanimationStartState(false)
-                                    }
-                                },
-                            horizontalArrangement = Arrangement.End,
+                                .padding(16.dp, 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Remove",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = ibmFont,
-                                fontSize = 14.sp
-                            )
-                            Icon(
-                                imageVector = Trash,
-                                contentDescription = "Trash",
-                                tint = Color.White,
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Edit,
+                                    contentDescription = "Edit",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(end = 5.dp)
+                                )
+
+                                Text(
+                                    text = "Edit",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = ibmFont,
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.clickable {
+                                        if (!animationStart) {
+                                            proxyToEdit = proxy.name
+                                            proxyEditValue = proxy.conString
+                                            showEditDialog = true
+                                        } else {
+                                            updateanimationStartState(false)
+                                        }
+                                    }
+                                )
+                            }
+
+                            Row(
                                 modifier = Modifier
-                                    .size(24.dp)
-                                    .padding(start = 5.dp)
-                            )
+                                    .clickable(
+                                        indication = null,
+                                        interactionSource = remember { MutableInteractionSource() }
+                                    ) {
+                                        if(!animationStart) {
+                                            deleteProxy(context, proxy)
+                                            refreshProxies()
+                                            if (selectedProxy == proxy.conString) selectedProxy = null
+                                        }else {
+                                            updateanimationStartState(false)
+                                        }
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Remove",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = ibmFont,
+                                    fontSize = 14.sp
+                                )
+                                Icon(
+                                    imageVector = Trash,
+                                    contentDescription = "Trash",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(start = 5.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -273,6 +315,51 @@ fun ProxyScreen(modifier: Modifier, context: Context) {
                         }
                 }) {
                     Text("Create")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showProfileDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showEditDialog) {
+        val regex = Regex("""^(\d{1,3}\.){0,3}\d{0,3}(:\d{0,5})?$""")
+        val regex2 = Regex("""^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$""")
+
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Enter profile details") },
+            text = {
+                Column {
+                    TextField(
+                        value = proxyEditValue,
+                        onValueChange = {
+                            if (it.isEmpty() || regex.matches(it)) {
+                                proxyEditValue = it
+                            }
+                        },
+                        placeholder = { Text("0.0.0.0:4444") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if(regex2.matches(proxyEditValue)){
+                        editProfile(
+                            context,
+                            ProxyData(name = proxyToEdit, conString = proxies.find { it.name == proxyToEdit }?.conString ?: "", selected = false),
+                            ProxyData(name = proxyToEdit, conString = proxyEditValue, selected = false)
+                        )
+                        showEditDialog = false
+                        refreshProxies()
+                    }
+                }) {
+                    Text("Edit")
                 }
             },
             dismissButton = {
