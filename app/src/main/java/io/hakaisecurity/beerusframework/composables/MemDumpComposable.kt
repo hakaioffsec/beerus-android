@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -293,7 +294,10 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
                     },
                     isError = !regexIsValid,
                     supportingText = {
-                        if (!regexIsValid) Text("Ex: 192.168.1.10:9032")
+                        Text(
+                            "Ex: 192.168.1.10:9032",
+                            modifier = Modifier.alpha(if (regexIsValid) 0f else 1f)
+                        )
                     },
                     label = { Text(if (!isUSB) "VPS Host" else "Pc Command", color = if (!isUSB) Color.White else Color.Gray) },
                     modifier = Modifier

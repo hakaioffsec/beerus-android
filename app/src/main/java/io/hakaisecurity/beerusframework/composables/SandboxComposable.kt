@@ -315,7 +315,11 @@ fun SandboxScreen(modifier: Modifier = Modifier) {
                     supportingText = {
                         Text(
                             "Ex: 192.168.1.10:9032",
+<<<<<<< Updated upstream
                             modifier = Modifier.alpha(if (regexIsValid) 0f else 01f)
+=======
+                            modifier = Modifier.alpha(if (regexIsValid) 0f else 1f)
+>>>>>>> Stashed changes
                         )
                     },
                     label = { Text(if (!isUSB) "VPS Host" else "Pc Command", color = if (!isUSB) Color.White else Color.Gray) },
