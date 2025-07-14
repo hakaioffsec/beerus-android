@@ -41,10 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.removeProperty
 import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.addProperty
+import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.editProperty
 import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.listProperties
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
+import io.hakaisecurity.beerusframework.ui.theme.Edit
 import io.hakaisecurity.beerusframework.ui.theme.Trash
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 
@@ -56,7 +58,11 @@ fun PropertiesScreen(modifier: Modifier, context: Context) {
     val propertiesState = remember { mutableStateOf(listProperties()) }
 
     val properties = propertiesState.value
-    var showPropertiesDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var propertyToEdit by remember { mutableStateOf("") }
+    var propertyEditValue by remember { mutableStateOf("") }
 
     fun refreshProperties() {
         propertiesState.value = listProperties()
@@ -77,7 +83,7 @@ fun PropertiesScreen(modifier: Modifier, context: Context) {
             Button(
                 onClick = {
                     if(!animationStart) {
-                        showPropertiesDialog = true
+                        showDeleteDialog = true
                     } else {
                         updateanimationStartState(false)
                     }
@@ -178,36 +184,72 @@ fun PropertiesScreen(modifier: Modifier, context: Context) {
                         Row(
                             modifier = modifier
                                 .fillMaxWidth()
-                                .padding(16.dp, 10.dp)
-                                .clickable(
+                                .padding(16.dp, 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier.clickable(
                                     indication = null,
                                     interactionSource = remember { MutableInteractionSource() }
                                 ) {
-                                    if(!animationStart) {
-                                        removeProperty(property.name)
-                                        refreshProperties()
-                                    }else {
+                                    if (!animationStart) {
+                                        showEditDialog = true
+                                        propertyToEdit = property.name
+                                        propertyEditValue = property.value
+                                    } else {
                                         updateanimationStartState(false)
                                     }
                                 },
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Remove",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = ibmFont,
-                                fontSize = 14.sp
-                            )
-                            Icon(
-                                imageVector = Trash,
-                                contentDescription = "Trash",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .padding(start = 5.dp)
-                            )
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Edit,
+                                    contentDescription = "Edit",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .padding(end = 5.dp)
+                                )
+                                Text(
+                                    text = "Edit",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = ibmFont,
+                                    fontSize = 14.sp
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.clickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() }
+                                ) {
+                                    if (!animationStart) {
+                                        removeProperty(property.name)
+                                        refreshProperties()
+                                    } else {
+                                        updateanimationStartState(false)
+                                    }
+                                },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Remove",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = ibmFont,
+                                    fontSize = 14.sp
+                                )
+                                Icon(
+                                    imageVector = Trash,
+                                    contentDescription = "Trash",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(start = 5.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -215,10 +257,9 @@ fun PropertiesScreen(modifier: Modifier, context: Context) {
         }
     }
 
-    if (showPropertiesDialog) {
-
+    if (showDeleteDialog) {
         AlertDialog(
-            onDismissRequest = { showPropertiesDialog = false },
+            onDismissRequest = { showDeleteDialog = false },
             title = { Text("Enter Property details") },
             text = {
                 Column {
@@ -242,7 +283,7 @@ fun PropertiesScreen(modifier: Modifier, context: Context) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    showPropertiesDialog = false
+                    showDeleteDialog = false
                     addProperty(name = newProperyName, value = newProperyValue)
                     newProperyName = ""
                     newProperyValue = ""
@@ -252,11 +293,49 @@ fun PropertiesScreen(modifier: Modifier, context: Context) {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPropertiesDialog = false }) {
+                TextButton(onClick = { showDeleteDialog = false }) {
                     Text("Cancel")
                 }
             }
         )
     }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Property") },
+            text = {
+                Column {
+                    Text(
+                        text = "Editing: $propertyToEdit",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    TextField(
+                        value = propertyEditValue,
+                        onValueChange = { propertyEditValue = it },
+                        placeholder = { Text("New value") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showEditDialog = false
+                    editProperty(propertyToEdit, propertyEditValue)
+                    refreshProperties()
+                }) {
+                    Text("Edit")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
 }
 

@@ -57,4 +57,15 @@ object Properties {
         }
         latch.await()
     }
+
+    fun editProperty(name: String, newValue: String) {
+        val latch = java.util.concurrent.CountDownLatch(1)
+        val sanitizedName = name.replace("\"", "\\\"").replace("'", "\\'")
+        val sanitizedValue = newValue.replace("\"", "\\\"").replace("'", "\\'")
+
+        runSuCommand("sed -i 's|^$sanitizedName=.*|$sanitizedName=$sanitizedValue|' $systemPropPath") {
+            latch.countDown()
+        }
+        latch.await()
+    }
 }

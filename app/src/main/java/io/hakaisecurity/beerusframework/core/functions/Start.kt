@@ -48,8 +48,12 @@ class Start {
             val assetZipNameFrida = "fridaCore.zip"
             val zipDestPathFrida = "$binPath/fridaCore.zip"
 
+            val assetZipNameDB = "dbAgent.zip"
+            val zipDestPathDB = "$binPath/dbAgent.zip"
+
             val tempZipMagisk = File(context.cacheDir, assetZipNameMagisk)
             val tempZipFrida = File(context.cacheDir, assetZipNameFrida)
+            val tempZipDB = File(context.cacheDir, assetZipNameDB)
 
             context.assets.open(assetZipNameMagisk).use { input ->
                 tempZipMagisk.outputStream().use { output ->
@@ -63,16 +67,41 @@ class Start {
                 }
             }
 
-            runSuCommand("mkdir -p $modulePathMagisk && cp ${tempZipMagisk.absolutePath} $zipDestPathMagisk" +
-                    "&& cd $modulePathMagisk && unzip $assetZipNameMagisk && rm -rf $assetZipNameMagisk && rm -rf $binPath/dummy" +
-                    "&& cd $binPath && cp ${tempZipFrida.absolutePath} $zipDestPathFrida && unzip $assetZipNameFrida"){
+            context.assets.open(assetZipNameDB).use { input ->
+                tempZipDB.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            runSuCommand("""
+                mkdir -p $modulePathMagisk &&
+                cp ${tempZipMagisk.absolutePath} $zipDestPathMagisk &&
+                cd $modulePathMagisk &&
+                unzip $assetZipNameMagisk &&
+                rm -rf $assetZipNameMagisk &&
+                rm -rf $binPath/dummy &&
+                cp ${tempZipFrida.absolutePath} $zipDestPathFrida &&
+                cd $binPath &&
+                unzip $assetZipNameFrida
+            """.trimIndent()) {
                 val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"
-                installBinsForBeerusModule(arch, binPath, zipDestPathFrida)
+                installBinsForBeerusModule(arch, binPath, zipDestPathFrida, tempZipDB, assetZipNameDB, zipDestPathDB)
             }
         }
 
-        fun installBinsForBeerusModule(arch: String, binPath: String, zipDestPathFrida: String){
-            runSuCommand("mv $binPath/libs/$arch/fridaCore $binPath && rm -rf $binPath/libs && rm -rf $zipDestPathFrida && reboot"){}
+        fun installBinsForBeerusModule(arch: String, binPath: String, zipDestPathFrida: String, tempZipDB: File, assetZipNameDB: String, zipDestPathDB: String){
+            runSuCommand("""
+                mv $binPath/libs/$arch/fridaCore $binPath &&
+                rm -rf $binPath/libs &&
+                rm -rf $zipDestPathFrida &&
+                cp ${tempZipDB.absolutePath} $zipDestPathDB &&
+                cd $binPath &&
+                unzip $assetZipNameDB
+                mv $binPath/libs/$arch/dbAgent $binPath &&
+                rm -rf $binPath/libs &&
+                rm -rf $zipDestPathDB &&
+                reboot
+            """.trimIndent()) {}
         }
     }
 }

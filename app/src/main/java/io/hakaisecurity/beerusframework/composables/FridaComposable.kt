@@ -75,6 +75,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
 import io.hakaisecurity.beerusframework.R
 import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.deleteScript
@@ -91,6 +92,8 @@ import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEdito
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.packageName
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmMagiskModuleInstallerDialog
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasMagisk
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
 import io.hakaisecurity.beerusframework.ui.theme.Add
 import io.hakaisecurity.beerusframework.ui.theme.Arrow_back
@@ -102,12 +105,14 @@ import java.io.File
 @Composable
 fun FridaScreen(modifier: Modifier, activity: Activity) {
     var expanded by remember { mutableStateOf(false) }
+    var showAddVersionDialog by remember { mutableStateOf(false) }
+    var newVersionText by remember { mutableStateOf("") }
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dec() * .30f
 
     val borderRadius by animateFloatAsState(
         targetValue = if (animationStart) 16f else 0f,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = tween(durationMillis = 300),
         label = "borderRadiusAnimation"
     )
 
@@ -118,12 +123,20 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
         scriptsState.value = getScriptsContent(activity)
     }
 
-    var selectedScriptContent by remember { mutableStateOf(TextFieldValue("")) }
+    var selectedScriptContent by remember { mutableStateOf("") }
     var selectedScript by remember { mutableStateOf("") }
+    var isEditorReady by remember { mutableStateOf(false) }
 
     var newScriptName by remember { mutableStateOf("") }
+    var noModule by remember { mutableStateOf(false) }
+    var noMagisk by remember { mutableStateOf(false) }
 
-    var noModuleOrMagisk by remember { mutableStateOf(false) }
+    LaunchedEffect(selectedScript) {
+        if (selectedScript.isNotEmpty() && inEditorMode) {
+            kotlinx.coroutines.delay(300)
+            isEditorReady = true
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -137,9 +150,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                 contentDescription = "Frida Logo"
             )
 
-            Spacer(
-                modifier = modifier.height(10.dp)
-            )
+            Spacer(modifier = modifier.height(10.dp))
 
             Row {
                 Text(
@@ -193,14 +204,12 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                 }
             }
 
-            Spacer(
-                modifier = modifier.height(20.dp)
-            )
+            Spacer(modifier = modifier.height(20.dp))
 
-            Row(modifier= modifier.padding(bottom = 5.dp)) {
+            Row(modifier = modifier.padding(bottom = 5.dp)) {
                 Button(
                     onClick = {
-                        if(!inEditorMode) {
+                        if (!inEditorMode) {
                             if (!animationStart) {
                                 expanded = true
                             } else {
@@ -208,9 +217,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                             }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                     shape = RoundedCornerShape(10.dp),
                     modifier = modifier
                         .padding(end = 5.dp)
@@ -224,10 +231,18 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                         fontFamily = ibmFont
                     )
                 }
+
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
+                    DropdownMenuItem(
+                        text = { Text("Add version manually", fontFamily = ibmFont) },
+                        onClick = {
+                            expanded = false
+                            showAddVersionDialog = true
+                        }
+                    )
                     if (fridaVersions.isEmpty()) {
                         DropdownMenuItem(
                             text = {
@@ -241,10 +256,12 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                     } else {
                         fridaVersions.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text(text = item, fontFamily = ibmFont) },
+                                text = { Text(text = item, fontFamily = ibmFont, color = if (item == currentFridaVersionFromList) Color.White else Color.Black) },
                                 onClick = {
-                                    currentFridaVersionFromList = item; expanded = false
-                                }
+                                    currentFridaVersionFromList = item
+                                    expanded = false
+                                },
+                                modifier = Modifier.background(color = if (item == currentFridaVersionFromList) Color.Red else Color.White)
                             )
                         }
                     }
@@ -252,7 +269,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
 
                 Button(
                     onClick = {
-                        if(!inEditorMode) {
+                        if (!inEditorMode) {
                             when (fridaRunningState) {
                                 "processing" -> {}
                                 else -> {
@@ -276,13 +293,8 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                         }
                     },
                     colors = when (fridaRunningState) {
-                        "processing" -> ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFBDBDBD)
-                        )
-
-                        else -> ButtonDefaults.buttonColors(
-                            containerColor = Color.White
-                        )
+                        "processing" -> ButtonDefaults.buttonColors(containerColor = Color(0xFFBDBDBD))
+                        else -> ButtonDefaults.buttonColors(containerColor = Color.White)
                     },
                     shape = RoundedCornerShape(10.dp),
                     modifier = modifier
@@ -312,7 +324,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                     .background(Color.White)
             )
 
-            Row(modifier = Modifier.padding(top = 5.dp)){
+            Row(modifier = Modifier.padding(top = 5.dp)) {
                 AddScriptButton(
                     activity,
                     inEditorMode,
@@ -323,7 +335,6 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
 
                 Spacer(modifier = Modifier.width(10.dp))
                 UploadScriptButton(activity, inEditorMode, refreshScript = { refreshScripts() })
-
                 Spacer(modifier = Modifier.width(10.dp))
             }
 
@@ -354,11 +365,18 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                             modifier = Modifier
                                 .clickable {
                                     if (!inEditorMode && hasModule) {
-                                        selectedScriptContent = TextFieldValue(content)
                                         selectedScript = fileName
+                                        selectedScriptContent = content
+                                        isEditorReady = false
                                         inEditorMode = true
-                                    }else{
-                                        noModuleOrMagisk = true
+                                    }
+
+                                    if(!hasModule){
+                                        noModule = true
+                                    }
+
+                                    if(!hasMagisk){
+                                        noMagisk = true
                                     }
                                 }
                                 .padding(0.dp, 5.dp, 0.dp, 10.dp)
@@ -382,8 +400,14 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                                     if (!inEditorMode && hasModule) {
                                         deleteScript(activity, fileName)
                                         refreshScripts()
-                                    }else{
-                                        noModuleOrMagisk = true
+                                    }
+
+                                    if(!hasModule){
+                                        noModule = true
+                                    }
+
+                                    if(!hasMagisk){
+                                        noMagisk = true
                                     }
                                 }
                         )
@@ -392,14 +416,46 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
             }
         }
 
-        if (noModuleOrMagisk) {
+        if (noMagisk) {
             AlertDialog(
-                onDismissRequest = { noModuleOrMagisk = false },
+                onDismissRequest = { noMagisk = false },
                 title = { Text("Note") },
-                text = { Text(text = "Hey, if you want to use this feature you may install Magisk and our module!", fontSize = 18.sp) },
+                text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
                 confirmButton = {
-                    Button(onClick = { noModuleOrMagisk = false }) {
+                    Button(onClick = {
+                        noMagisk = false
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                            data = "https://topjohnwu.github.io/Magisk/".toUri()
+                        }
+                        activity.startActivity(intent)
+                    }) {
                         Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { noMagisk = false }) {
+                        Text("Do After", fontFamily = ibmFont)
+                    }
+                }
+            )
+        }
+
+        if (noModule) {
+            AlertDialog(
+                onDismissRequest = { noModule = false },
+                title = { Text("Note") },
+                text = { Text(text = "Hey, if you want to use this feature you may install our module!", fontSize = 18.sp) },
+                confirmButton = {
+                    Button(onClick = {
+                        noModule = false
+                        confirmMagiskModuleInstallerDialog(activity)
+                    }) {
+                        Text("Install")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { noModule = false }) {
+                        Text("Do After", fontFamily = ibmFont)
                     }
                 }
             )
@@ -407,27 +463,35 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
 
         AnimatedVisibility(
             visible = inEditorMode,
-            enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(500)),
-            exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(500))
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(durationMillis = 300)
+            ),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(durationMillis = 300)
+            )
         ) {
             var showPackageDialog by remember { mutableStateOf(false) }
 
             Column(
-                modifier = Modifier.fillMaxSize().drawWithContent {
-                    val radiusPx = borderRadius.dp.toPx()
-                    drawRoundRect(
-                        color = Color(0xFF2D2D2D),
-                        size = size,
-                        cornerRadius = CornerRadius(radiusPx, radiusPx)
-                    )
-                    drawContent()
-                    drawRoundRect(
-                        color = Color(0xFF2D2D2D),
-                        cornerRadius = CornerRadius(radiusPx, radiusPx),
-                        size = size,
-                        style = Stroke(width = 4.dp.toPx())
-                    )
-                }
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawWithContent {
+                        val radiusPx = borderRadius.dp.toPx()
+                        drawRoundRect(
+                            color = Color(0xFF2D2D2D),
+                            size = size,
+                            cornerRadius = CornerRadius(radiusPx, radiusPx)
+                        )
+                        drawContent()
+                        drawRoundRect(
+                            color = Color(0xFF2D2D2D),
+                            cornerRadius = CornerRadius(radiusPx, radiusPx),
+                            size = size,
+                            style = Stroke(width = 4.dp.toPx())
+                        )
+                    }
             ) {
                 Box(modifier = Modifier.fillMaxWidth().padding(5.dp, 15.dp)) {
                     Row(
@@ -445,6 +509,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                                     interactionSource = remember { MutableInteractionSource() }
                                 ) {
                                     inEditorMode = false
+                                    isEditorReady = false
                                 }
                         )
 
@@ -455,29 +520,42 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                             fontFamily = ibmFont,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                                .wrapContentWidth(Alignment.CenterHorizontally).padding(end = 10.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                                .padding(end = 10.dp)
                         )
                     }
                 }
 
-                CodeEditor(
-                    code = selectedScriptContent,
-                    modifier = modifier.weight(1f)
-                ) { newCode ->
-                    selectedScriptContent = newCode
+                if (isEditorReady) {
+                    CodeEditor(
+                        code = TextFieldValue(selectedScriptContent),
+                        modifier = modifier.weight(1f)
+                    ) { newCode ->
+                        selectedScriptContent = newCode.text
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Loading...", fontSize = 16.sp, color = Color.White, fontFamily = ibmFont)
+                    }
                 }
 
                 Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 0.dp)) {
                     Button(
                         onClick = {
-                            if(packageName != "") {
+                            if (packageName != "") {
                                 injectFridaCore(
                                     activity,
                                     packageName,
                                     selectedScript
                                 )
-                            }else{
+                            } else {
                                 Toast.makeText(activity, "select an app package", Toast.LENGTH_SHORT).show()
                             }
                         },
@@ -492,7 +570,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
 
                     Button(
                         onClick = {
-                            saveScript(activity, selectedScript, selectedScriptContent.text)
+                            saveScript(activity, selectedScript, selectedScriptContent)
                             refreshScripts()
                             Toast.makeText(activity, "Script saved successfully", Toast.LENGTH_SHORT).show()
                         },
@@ -541,6 +619,41 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                 )
             }
         }
+    }
+
+    if (showAddVersionDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddVersionDialog = false },
+            title = { Text("Add Version") },
+            text = {
+                TextField(
+                    value = newVersionText,
+                    onValueChange = { newVersionText = it },
+                    placeholder = { Text("e.g., 16.1.2") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newVersionText.isNotBlank()) {
+                        fridaVersions.add(newVersionText.trim())
+                        currentFridaVersionFromList = newVersionText.trim()
+                        showAddVersionDialog = false
+                        newVersionText = ""
+                    }
+                }) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAddVersionDialog = false
+                    newVersionText = ""
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -623,7 +736,8 @@ fun AddScriptButton(
     refreshScript: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    var noModuleOrMagisk by remember { mutableStateOf(false) }
+    var noModule by remember { mutableStateOf(false) }
+    var noMagisk by remember { mutableStateOf(false) }
 
     Icon(
         imageVector = Add,
@@ -635,8 +749,14 @@ fun AddScriptButton(
             .clickable {
                 if(!inEditorMode && hasModule) {
                     showDialog = true
-                }else{
-                    noModuleOrMagisk = true
+                }
+
+                if(!hasModule){
+                    noModule = true
+                }
+
+                if(!hasMagisk){
+                    noMagisk = true
                 }
             }
     )
@@ -672,14 +792,46 @@ fun AddScriptButton(
         )
     }
 
-    if (noModuleOrMagisk) {
+    if (noMagisk) {
         AlertDialog(
-            onDismissRequest = { noModuleOrMagisk = false },
+            onDismissRequest = { noMagisk = false },
             title = { Text("Note") },
-            text = { Text(text = "Hey, if you want to use this feature you may install Magisk and our module!", fontSize = 18.sp) },
+            text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
             confirmButton = {
-                Button(onClick = { noModuleOrMagisk = false }) {
+                Button(onClick = {
+                    noMagisk = false
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                        data = "https://topjohnwu.github.io/Magisk/".toUri()
+                    }
+                    context.startActivity(intent)
+                }) {
                     Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noMagisk = false }) {
+                    Text("Do After", fontFamily = ibmFont)
+                }
+            }
+        )
+    }
+
+    if (noModule) {
+        AlertDialog(
+            onDismissRequest = { noModule = false },
+            title = { Text("Note") },
+            text = { Text(text = "Hey, if you want to use this feature you may install our module!", fontSize = 18.sp) },
+            confirmButton = {
+                Button(onClick = {
+                    noModule = false
+                    confirmMagiskModuleInstallerDialog(context)
+                }) {
+                    Text("Install")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noModule = false }) {
+                    Text("Do After", fontFamily = ibmFont)
                 }
             }
         )
@@ -688,7 +840,9 @@ fun AddScriptButton(
 
 @Composable
 fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: () -> Unit){
-    var noModuleOrMagisk by remember { mutableStateOf(false) }
+    var noModule by remember { mutableStateOf(false) }
+    var noMagisk by remember { mutableStateOf(false) }
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let {
             val fileName = getFileNameFromUri(context, uri)
@@ -717,20 +871,58 @@ fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: (
             .clickable {
                 if(!inEditorMode && hasModule) {
                     launcher.launch(arrayOf("application/javascript"))
-                }else{
-                    noModuleOrMagisk = true
+                }
+
+                if(!hasModule){
+                    noModule = true
+                }
+
+                if(!hasMagisk){
+                    noMagisk = true
                 }
             }
     )
 
-    if (noModuleOrMagisk) {
+    if (noMagisk) {
         AlertDialog(
-            onDismissRequest = { noModuleOrMagisk = false },
+            onDismissRequest = { noMagisk = false },
             title = { Text("Note") },
-            text = { Text(text = "Hey, if you want to use this feature you may install Magisk and our module!", fontSize = 18.sp) },
+            text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
             confirmButton = {
-                Button(onClick = { noModuleOrMagisk = false }) {
+                Button(onClick = {
+                    noMagisk = false
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                        data = "https://topjohnwu.github.io/Magisk/".toUri()
+                    }
+                    context.startActivity(intent)
+                }) {
                     Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noMagisk = false }) {
+                    Text("Do After", fontFamily = ibmFont)
+                }
+            }
+        )
+    }
+
+    if (noModule) {
+        AlertDialog(
+            onDismissRequest = { noModule = false },
+            title = { Text("Note") },
+            text = { Text(text = "Hey, if you want to use this feature you may install our module!", fontSize = 18.sp) },
+            confirmButton = {
+                Button(onClick = {
+                    noModule = false
+                    confirmMagiskModuleInstallerDialog(context)
+                }) {
+                    Text("Install")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noModule = false }) {
+                    Text("Do After", fontFamily = ibmFont)
                 }
             }
         )
