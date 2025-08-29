@@ -12,7 +12,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,7 +32,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -69,8 +67,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -97,6 +97,7 @@ import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasMagi
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
 import io.hakaisecurity.beerusframework.ui.theme.Add
 import io.hakaisecurity.beerusframework.ui.theme.Arrow_back
+import io.hakaisecurity.beerusframework.ui.theme.JsSyntaxHighlighter
 import io.hakaisecurity.beerusframework.ui.theme.Trash
 import io.hakaisecurity.beerusframework.ui.theme.Upload
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
@@ -123,7 +124,8 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
         scriptsState.value = getScriptsContent(activity)
     }
 
-    var selectedScriptContent by remember { mutableStateOf("") }
+    // ***** IMPORTANT: keep TextFieldValue, not String *****
+    var selectedScriptContent by remember { mutableStateOf(TextFieldValue("")) }
     var selectedScript by remember { mutableStateOf("") }
     var isEditorReady by remember { mutableStateOf(false) }
 
@@ -189,7 +191,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                     fontFamily = ibmFont
                 )
 
-                Canvas(
+                androidx.compose.foundation.Canvas(
                     modifier = modifier
                         .size(25.dp)
                         .padding(start = 5.dp)
@@ -218,7 +220,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
                     modifier = modifier
                         .padding(end = 5.dp)
                         .width(140.dp)
@@ -256,7 +258,13 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                     } else {
                         fridaVersions.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text(text = item, fontFamily = ibmFont, color = if (item == currentFridaVersionFromList) Color.White else Color.Black) },
+                                text = {
+                                    Text(
+                                        text = item,
+                                        fontFamily = ibmFont,
+                                        color = if (item == currentFridaVersionFromList) Color.White else Color.Black
+                                    )
+                                },
                                 onClick = {
                                     currentFridaVersionFromList = item
                                     expanded = false
@@ -296,7 +304,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                         "processing" -> ButtonDefaults.buttonColors(containerColor = Color(0xFFBDBDBD))
                         else -> ButtonDefaults.buttonColors(containerColor = Color.White)
                     },
-                    shape = RoundedCornerShape(10.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
                     modifier = modifier
                         .padding(start = 5.dp)
                         .width(140.dp)
@@ -366,16 +374,16 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                                 .clickable {
                                     if (!inEditorMode && hasModule) {
                                         selectedScript = fileName
-                                        selectedScriptContent = content
+                                        selectedScriptContent = TextFieldValue(content) // keep selection stateable
                                         isEditorReady = false
                                         inEditorMode = true
                                     }
 
-                                    if(!hasModule){
+                                    if (!hasModule) {
                                         noModule = true
                                     }
 
-                                    if(!hasMagisk){
+                                    if (!hasMagisk) {
                                         noMagisk = true
                                     }
                                 }
@@ -402,11 +410,11 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                                         refreshScripts()
                                     }
 
-                                    if(!hasModule){
+                                    if (!hasModule) {
                                         noModule = true
                                     }
 
-                                    if(!hasMagisk){
+                                    if (!hasMagisk) {
                                         noMagisk = true
                                     }
                                 }
@@ -519,7 +527,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                             color = Color.White,
                             fontFamily = ibmFont,
                             fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentWidth(Alignment.CenterHorizontally)
@@ -530,11 +538,13 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
 
                 if (isEditorReady) {
                     CodeEditor(
-                        code = TextFieldValue(selectedScriptContent),
+                        value = selectedScriptContent,
+                        onValueChange = { newValue ->
+                            // keep selection/cursor; don't rebuild from String
+                            selectedScriptContent = newValue
+                        },
                         modifier = modifier.weight(1f)
-                    ) { newCode ->
-                        selectedScriptContent = newCode.text
-                    }
+                    )
                 } else {
                     Box(
                         modifier = Modifier
@@ -560,7 +570,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .padding(end = 5.dp)
                             .weight(1f)
@@ -570,12 +580,14 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
 
                     Button(
                         onClick = {
-                            saveScript(activity, selectedScript, selectedScriptContent)
+                            // normalize only when persisting
+                            val toPersist = selectedScriptContent.text.replace("\r\n", "\n")
+                            saveScript(activity, selectedScript, toPersist)
                             refreshScripts()
                             Toast.makeText(activity, "Script saved successfully", Toast.LENGTH_SHORT).show()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .padding(start = 5.dp)
                             .weight(1f)
@@ -593,7 +605,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                         modifier = Modifier
                             .height(35.dp)
                             .weight(1f)
-                            .background(Color.White, shape = RoundedCornerShape(10.dp))
+                            .background(Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
                             .clickable {
                                 if (hasModule) {
                                     showPackageDialog = true
@@ -659,72 +671,35 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
 
 @Composable
 fun CodeEditor(
-    code: TextFieldValue,
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
-    onCodeChange: (TextFieldValue) -> Unit
 ) {
-    val scrollState = rememberScrollState()
+    val vScroll = rememberScrollState()
 
-    Row(modifier = modifier.fillMaxSize().verticalScroll(scrollState).padding(10.dp)) {
-        BasicTextField(
-            value = code,
-            onValueChange = { newValue ->
-                onCodeChange(newValue.copy(text = newValue.text.replace("\r\n", "\n")))
-            },
-            textStyle = TextStyle(
-                color = Color.Transparent,
-                fontSize = 12.sp,
-                fontFamily = ibmFont,
-                letterSpacing = 0.sp
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.Transparent)
-                .zIndex(1f),
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None,
-                autoCorrect = false,
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.None
-            ),
-            cursorBrush = SolidColor(Color.White),
-            decorationBox = { innerTextField ->
-                Box {
-                    Text(
-                        text = syntaxHighlight(code.text),
-                        fontSize = 12.sp,
-                        fontFamily = ibmFont,
-                        letterSpacing = 0.sp
-                    )
-                    innerTextField()
-                }
-            }
-        )
-    }
-}
-
-fun syntaxHighlight(code: String): AnnotatedString {
-    val builder = AnnotatedString.Builder()
-    val keywords = setOf(
-        "const", "let", "var", "function", "class", "import", "export",
-        "if", "else", "for", "while", "return", "try", "catch",
-        "async", "await", "new", "null", "undefined", "true", "false"
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        textStyle = TextStyle(
+            color = Color.White,
+            fontSize = 12.sp,
+            fontFamily = ibmFont,
+            letterSpacing = 0.sp
+        ),
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(vScroll)
+            .padding(10.dp)
+            .zIndex(1f),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.None,
+            autoCorrect = false,
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.None
+        ),
+        cursorBrush = SolidColor(Color.White),
+        visualTransformation = JsSyntaxHighlighter
     )
-    val pattern = Regex("([a-zA-Z_][a-zA-Z0-9_]*|\\d+|\"[^\"]*\"|'[^']*'|\\s+|[^\\s])")
-    val matches = pattern.findAll(code)
-
-    for (match in matches) {
-        val token = match.value
-        val style = when {
-            token in keywords -> SpanStyle(color = Color(0xFFF51D00), fontWeight = FontWeight.Bold)
-            token.startsWith("\"") || token.startsWith("'") -> SpanStyle(color = Color(0xFFF5B600))
-            token.matches(Regex("\\d+")) -> SpanStyle(color = Color(0xFFF54700))
-            token.isBlank() -> SpanStyle(color = Color.White)
-            else -> SpanStyle(color = Color.White)
-        }
-        builder.withStyle(style) { append(token) }
-    }
-    return builder.toAnnotatedString()
 }
 
 @Composable
@@ -747,15 +722,15 @@ fun AddScriptButton(
             .padding(end = 8.dp)
             .size(32.dp)
             .clickable {
-                if(!inEditorMode && hasModule) {
+                if (!inEditorMode && hasModule) {
                     showDialog = true
                 }
 
-                if(!hasModule){
+                if (!hasModule) {
                     noModule = true
                 }
 
-                if(!hasMagisk){
+                if (!hasMagisk) {
                     noMagisk = true
                 }
             }
@@ -776,18 +751,14 @@ fun AddScriptButton(
             confirmButton = {
                 TextButton(onClick = {
                     showDialog = false
-                    saveScript(context, "${newScriptName.replace(".js", "")}.js", "// Write yor code here")
+                    saveScript(context, "${newScriptName.replace(".js", "")}.js", "// Write your code here")
                     refreshScript()
                 }) {
                     Text("Create")
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -804,15 +775,9 @@ fun AddScriptButton(
                         data = "https://topjohnwu.github.io/Magisk/".toUri()
                     }
                     context.startActivity(intent)
-                }) {
-                    Text("OK")
-                }
+                }) { Text("OK") }
             },
-            dismissButton = {
-                TextButton(onClick = { noMagisk = false }) {
-                    Text("Do After", fontFamily = ibmFont)
-                }
-            }
+            dismissButton = { TextButton(onClick = { noMagisk = false }) { Text("Do After", fontFamily = ibmFont) } }
         )
     }
 
@@ -825,21 +790,15 @@ fun AddScriptButton(
                 Button(onClick = {
                     noModule = false
                     confirmMagiskModuleInstallerDialog(context)
-                }) {
-                    Text("Install")
-                }
+                }) { Text("Install") }
             },
-            dismissButton = {
-                TextButton(onClick = { noModule = false }) {
-                    Text("Do After", fontFamily = ibmFont)
-                }
-            }
+            dismissButton = { TextButton(onClick = { noModule = false }) { Text("Do After", fontFamily = ibmFont) } }
         )
     }
 }
 
 @Composable
-fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: () -> Unit){
+fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: () -> Unit) {
     var noModule by remember { mutableStateOf(false) }
     var noMagisk by remember { mutableStateOf(false) }
 
@@ -869,15 +828,15 @@ fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: (
             .padding(end = 8.dp)
             .size(32.dp)
             .clickable {
-                if(!inEditorMode && hasModule) {
+                if (!inEditorMode && hasModule) {
                     launcher.launch(arrayOf("application/javascript"))
                 }
 
-                if(!hasModule){
+                if (!hasModule) {
                     noModule = true
                 }
 
-                if(!hasMagisk){
+                if (!hasMagisk) {
                     noMagisk = true
                 }
             }
@@ -895,15 +854,9 @@ fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: (
                         data = "https://topjohnwu.github.io/Magisk/".toUri()
                     }
                     context.startActivity(intent)
-                }) {
-                    Text("OK")
-                }
+                }) { Text("OK") }
             },
-            dismissButton = {
-                TextButton(onClick = { noMagisk = false }) {
-                    Text("Do After", fontFamily = ibmFont)
-                }
-            }
+            dismissButton = { TextButton(onClick = { noMagisk = false }) { Text("Do After", fontFamily = ibmFont) } }
         )
     }
 
@@ -916,15 +869,9 @@ fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: (
                 Button(onClick = {
                     noModule = false
                     confirmMagiskModuleInstallerDialog(context)
-                }) {
-                    Text("Install")
-                }
+                }) { Text("Install") }
             },
-            dismissButton = {
-                TextButton(onClick = { noModule = false }) {
-                    Text("Do After", fontFamily = ibmFont)
-                }
-            }
+            dismissButton = { TextButton(onClick = { noModule = false }) { Text("Do After", fontFamily = ibmFont) } }
         )
     }
 }
