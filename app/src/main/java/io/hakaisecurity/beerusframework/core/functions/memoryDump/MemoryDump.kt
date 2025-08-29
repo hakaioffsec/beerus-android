@@ -74,7 +74,11 @@ object MemoryDump {
                             }
                         }
                     } else {
-                        runSuCommand("mv ${tarFile.absolutePath} /data/local/tmp") { onComplete("OK") }
+                        runSuCommand("cp -r ${tarFile.absolutePath} /data/local/tmp") {
+                            runSuCommand("rm -rf ${tarFile.absolutePath}") {
+                                onComplete("OK")
+                            }
+                        }
                     }
                 }
             }
