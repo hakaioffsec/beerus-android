@@ -52,7 +52,7 @@ Beerus Framework is a powerful and modular toolkit designed to support every sta
   <img width="800px" src="./readmeSources/useCase.png" alt="Project Use Case">
 </p>
 
-Learn more in our [Blog Post](https://github.com/kylelobo/The-Documentation-Compendium/contributors).
+Learn more in our [Blog Post](https://hakaisecurity.io/beerus-framework-a-new-mobile-framework-arises/insights-blog/).
 
 ## 🛠️ Build <a name="build"></a>
 
