@@ -9,10 +9,10 @@
 <div align="center">
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![Downloads](https://img.shields.io/badge/dynamic/json?color=green&label=Downloads&query=totalString&url=&cacheSeconds=1800)](https://raw.githubusercontent.com/topjohnwu/magisk-files/count/count.json)
-[![GitHub Issues](https://img.shields.io/github/issues/kylelobo/The-Documentation-Compendium.svg)](https://github.com/hakaioffsec/beerus-android/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/kylelobo/The-Documentation-Compendium.svg)](https://github.com/hakaioffsec/beerus-android/pulls)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE)
+[![Downloads](https://img.shields.io/github/v/release/hakaioffsec/beerus-android)](https://github.com/hakaioffsec/beerus-android/releases)
+[![GitHub Issues](https://img.shields.io/github/issues/hakaioffsec/beerus-android)](https://github.com/hakaioffsec/beerus-android/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/hakaioffsec/beerus-android)](https://github.com/hakaioffsec/beerus-android/pulls)
+[![License](https://img.shields.io/github/license/hakaioffsec/beerus-android)](https://github.com/hakaioffsec/beerus-android/blob/main/LICENSE)
 
 </div>
 
