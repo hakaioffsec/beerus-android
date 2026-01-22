@@ -96,7 +96,7 @@ fun RootScreen(modifier: Modifier, context: Context) {
         Spacer(modifier = modifier.height(screenHeight.dp))
 
         Image(
-            painter = painterResource(id = R.drawable.magisklogo),
+            painter = painterResource(id = R.drawable.root),
             contentDescription = "Root Logo",
             modifier = modifier.size((screenWidth / 2).dp)
         )

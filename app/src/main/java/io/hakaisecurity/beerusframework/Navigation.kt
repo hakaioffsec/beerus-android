@@ -102,7 +102,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     var selectedItem by remember { mutableStateOf("Home") }
 
     val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
-    val iconRoot = ImageVector.vectorResource(id = R.drawable.magiskicon)
+    val iconRoot = ImageVector.vectorResource(id = R.drawable.rooticon)
     val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
     val iconProperty = ImageVector.vectorResource(id = R.drawable.propertyicon)
 
