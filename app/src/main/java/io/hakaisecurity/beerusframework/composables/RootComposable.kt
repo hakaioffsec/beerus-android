@@ -52,20 +52,20 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.R
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.getAllModules
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.getStatusModule
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.moduleOps
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.startModuleManager
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.confirmMagiskDialog
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.dismissMagiskDialog
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.showMagiskDialog
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.getAllModules
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.getStatusModule
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.moduleOps
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.startModuleManager
+import io.hakaisecurity.beerusframework.core.models.RootManager.Companion.confirmRootDialog
+import io.hakaisecurity.beerusframework.core.models.RootManager.Companion.dismissRootDialog
+import io.hakaisecurity.beerusframework.core.models.RootManager.Companion.showRootDialog
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import io.hakaisecurity.beerusframework.ui.theme.RefreshCcwDot
 import io.hakaisecurity.beerusframework.ui.theme.Trash
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 
 @Composable
-fun MagiskScreen(modifier: Modifier, context: Context) {
+fun RootScreen(modifier: Modifier, context: Context) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dec()
     val screenHeight = configuration.screenHeightDp.dec() * .15f
@@ -80,10 +80,10 @@ fun MagiskScreen(modifier: Modifier, context: Context) {
         getAllModules(modulePropsList)
     }
 
-    if (showMagiskDialog) {
+    if (showRootDialog) {
         MagikRebootDialog(
-            onDismiss = { dismissMagiskDialog(); modulePropsList.clear(); getAllModules(modulePropsList) },
-            onConfirm = { confirmMagiskDialog() }
+            onDismiss = { dismissRootDialog(); modulePropsList.clear(); getAllModules(modulePropsList) },
+            onConfirm = { confirmRootDialog() }
         )
     }
 
@@ -97,7 +97,7 @@ fun MagiskScreen(modifier: Modifier, context: Context) {
 
         Image(
             painter = painterResource(id = R.drawable.magisklogo),
-            contentDescription = "Magisk Logo",
+            contentDescription = "Root Logo",
             modifier = modifier.size((screenWidth / 2).dp)
         )
 

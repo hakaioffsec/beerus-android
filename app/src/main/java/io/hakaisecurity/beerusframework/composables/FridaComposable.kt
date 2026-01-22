@@ -3,6 +3,7 @@ package io.hakaisecurity.beerusframework.composables
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -92,8 +93,8 @@ import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEdito
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.packageName
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmMagiskModuleInstallerDialog
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasMagisk
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmRootModuleInstallerDialog
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasRoot
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
 import io.hakaisecurity.beerusframework.ui.theme.Add
 import io.hakaisecurity.beerusframework.ui.theme.Arrow_back
@@ -131,7 +132,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
 
     var newScriptName by remember { mutableStateOf("") }
     var noModule by remember { mutableStateOf(false) }
-    var noMagisk by remember { mutableStateOf(false) }
+    var noRoot by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedScript) {
         if (selectedScript.isNotEmpty() && inEditorMode) {
@@ -383,8 +384,8 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                                         noModule = true
                                     }
 
-                                    if (!hasMagisk) {
-                                        noMagisk = true
+                                    if (!hasRoot) {
+                                        noRoot = true
                                     }
                                 }
                                 .padding(0.dp, 5.dp, 0.dp, 10.dp)
@@ -414,8 +415,8 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                                         noModule = true
                                     }
 
-                                    if (!hasMagisk) {
-                                        noMagisk = true
+                                    if (!hasRoot) {
+                                        noRoot = true
                                     }
                                 }
                         )
@@ -424,25 +425,36 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
             }
         }
 
-        if (noMagisk) {
+        if (noRoot) {
             AlertDialog(
-                onDismissRequest = { noMagisk = false },
+                onDismissRequest = { noRoot = false },
                 title = { Text("Note") },
-                text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
+                text = {
+                    Text(
+                        text = "Hey, if you want to use this feature you may install Magisk or KernelSU!",
+                        fontSize = 18.sp
+                    )
+                },
                 confirmButton = {
                     Button(onClick = {
-                        noMagisk = false
-                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                            data = "https://topjohnwu.github.io/Magisk/".toUri()
-                        }
-                        activity.startActivity(intent)
-                    }) {
-                        Text("OK")
-                    }
+                        noRoot = false
+                        activity.startActivity(
+                            Intent(Intent.ACTION_VIEW, "https://topjohnwu.github.io/Magisk/".toUri())
+                        )
+                    }) { Text("Magisk") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { noMagisk = false }) {
-                        Text("Do After", fontFamily = ibmFont)
+                    Row {
+                        TextButton(onClick = {
+                            noRoot = false
+                            activity.startActivity(
+                                Intent(Intent.ACTION_VIEW, "https://kernelsu.org/".toUri())
+                            )
+                        }) { Text("KernelSU") }
+
+                        TextButton(onClick = { noRoot = false }) {
+                            Text("Dismiss", fontFamily = ibmFont)
+                        }
                     }
                 }
             )
@@ -456,7 +468,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                 confirmButton = {
                     Button(onClick = {
                         noModule = false
-                        confirmMagiskModuleInstallerDialog(activity)
+                        confirmRootModuleInstallerDialog(activity)
                     }) {
                         Text("Install")
                     }
@@ -712,7 +724,7 @@ fun AddScriptButton(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var noModule by remember { mutableStateOf(false) }
-    var noMagisk by remember { mutableStateOf(false) }
+    var noRoot by remember { mutableStateOf(false) }
 
     Icon(
         imageVector = Add,
@@ -730,8 +742,8 @@ fun AddScriptButton(
                     noModule = true
                 }
 
-                if (!hasMagisk) {
-                    noMagisk = true
+                if (!hasRoot) {
+                    noRoot = true
                 }
             }
     )
@@ -763,21 +775,38 @@ fun AddScriptButton(
         )
     }
 
-    if (noMagisk) {
+    if (noRoot) {
         AlertDialog(
-            onDismissRequest = { noMagisk = false },
+            onDismissRequest = { noRoot = false },
             title = { Text("Note") },
-            text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
+            text = {
+                Text(
+                    text = "Hey, if you want to use this feature you may install Magisk or KernelSU!",
+                    fontSize = 18.sp
+                )
+            },
             confirmButton = {
                 Button(onClick = {
-                    noMagisk = false
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                        data = "https://topjohnwu.github.io/Magisk/".toUri()
-                    }
-                    context.startActivity(intent)
-                }) { Text("OK") }
+                    noRoot = false
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, "https://topjohnwu.github.io/Magisk/".toUri())
+                    )
+                }) { Text("Magisk") }
             },
-            dismissButton = { TextButton(onClick = { noMagisk = false }) { Text("Do After", fontFamily = ibmFont) } }
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        noRoot = false
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, "https://kernelsu.org/".toUri())
+                        )
+                    }) { Text("KernelSU") }
+
+                    TextButton(onClick = { noRoot = false }) {
+                        Text("Dismiss", fontFamily = ibmFont)
+                    }
+                }
+            }
         )
     }
 
@@ -789,7 +818,7 @@ fun AddScriptButton(
             confirmButton = {
                 Button(onClick = {
                     noModule = false
-                    confirmMagiskModuleInstallerDialog(context)
+                    confirmRootModuleInstallerDialog(context)
                 }) { Text("Install") }
             },
             dismissButton = { TextButton(onClick = { noModule = false }) { Text("Do After", fontFamily = ibmFont) } }
@@ -800,7 +829,7 @@ fun AddScriptButton(
 @Composable
 fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: () -> Unit) {
     var noModule by remember { mutableStateOf(false) }
-    var noMagisk by remember { mutableStateOf(false) }
+    var noRoot by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let {
@@ -836,27 +865,44 @@ fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: (
                     noModule = true
                 }
 
-                if (!hasMagisk) {
-                    noMagisk = true
+                if (!hasRoot) {
+                    noRoot = true
                 }
             }
     )
 
-    if (noMagisk) {
+    if (noRoot) {
         AlertDialog(
-            onDismissRequest = { noMagisk = false },
+            onDismissRequest = { noRoot = false },
             title = { Text("Note") },
-            text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
+            text = {
+                Text(
+                    text = "Hey, if you want to use this feature you may install Magisk or KernelSU!",
+                    fontSize = 18.sp
+                )
+            },
             confirmButton = {
                 Button(onClick = {
-                    noMagisk = false
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                        data = "https://topjohnwu.github.io/Magisk/".toUri()
-                    }
-                    context.startActivity(intent)
-                }) { Text("OK") }
+                    noRoot = false
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, "https://topjohnwu.github.io/Magisk/".toUri())
+                    )
+                }) { Text("Magisk") }
             },
-            dismissButton = { TextButton(onClick = { noMagisk = false }) { Text("Do After", fontFamily = ibmFont) } }
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        noRoot = false
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, "https://kernelsu.org/".toUri())
+                        )
+                    }) { Text("KernelSU") }
+
+                    TextButton(onClick = { noRoot = false }) {
+                        Text("Dismiss", fontFamily = ibmFont)
+                    }
+                }
+            }
         )
     }
 
@@ -868,7 +914,7 @@ fun UploadScriptButton(context: Context, inEditorMode: Boolean, refreshScript: (
             confirmButton = {
                 Button(onClick = {
                     noModule = false
-                    confirmMagiskModuleInstallerDialog(context)
+                    confirmRootModuleInstallerDialog(context)
                 }) { Text("Install") }
             },
             dismissButton = { TextButton(onClick = { noModule = false }) { Text("Do After", fontFamily = ibmFont) } }

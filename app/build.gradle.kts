@@ -85,21 +85,21 @@ val buildNativeFrida by tasks.registering(Exec::class) {
     commandLine = listOf(ndkBuild.absolutePath)
 }
 
-val zipFolderTaskMagisk = tasks.register("zipModule") {
-    val inputMagiskDir = layout.projectDirectory.dir("../magiskModule")
-    val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
+val zipFolderTaskRoot = tasks.register("zipModule") {
+    val inputRootDir = layout.projectDirectory.dir("../rootModule")
+    val outputRootZip = layout.buildDirectory.file("generated/beerusRootModule.zip")
 
-    inputs.dir(inputMagiskDir)
-    outputs.file(outputMagiskZip)
+    inputs.dir(inputRootDir)
+    outputs.file(outputRootZip)
 
     doLast {
-        val inputMagisk: File = inputMagiskDir.asFile
-        val outputMagisk: File = outputMagiskZip.get().asFile
-        outputMagisk.parentFile.mkdirs()
+        val inputRoot: File = inputRootDir.asFile
+        val outputRoot: File = outputRootZip.get().asFile
+        outputRoot.parentFile.mkdirs()
 
-        ZipOutputStream(outputMagisk.outputStream()).use { zip ->
-            inputMagisk.walkTopDown().filter { it.isFile }.forEach { file ->
-                val entryName = file.relativeTo(inputMagisk).invariantSeparatorsPath
+        ZipOutputStream(outputRoot.outputStream()).use { zip ->
+            inputRoot.walkTopDown().filter { it.isFile }.forEach { file ->
+                val entryName = file.relativeTo(inputRoot).invariantSeparatorsPath
                 zip.putNextEntry(ZipEntry(entryName))
                 file.inputStream().copyTo(zip)
                 zip.closeEntry()
@@ -169,13 +169,13 @@ android.applicationVariants.all {
     val variantName = variant.name.replaceFirstChar(Char::uppercaseChar)
 
     val copyZipsToAssets = tasks.register<Copy>("copyZipsToAssets$variantName") {
-        dependsOn(zipFolderTaskMagisk, zipFolderTaskFrida, zipFolderTaskDbAgent)
+        dependsOn(zipFolderTaskRoot, zipFolderTaskFrida, zipFolderTaskDbAgent)
 
-        val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
+        val outputRootZip = layout.buildDirectory.file("generated/beerusRootModule.zip")
         val outputFridaZip = layout.buildDirectory.file("generated/fridaCore.zip")
         val outputDbAgentZip = layout.buildDirectory.file("generated/dbAgent.zip")
-        from(outputMagiskZip) {
-            rename { "beerusMagiskModule.zip" }
+        from(outputRootZip) {
+            rename { "beerusRootModule.zip" }
         }
 
         from(outputFridaZip) {
