@@ -322,27 +322,7 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
                     )
                 )
             }
-
-            Row (
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp)
-            ){
-                Icon(
-                    imageVector = iconWarning,
-                    contentDescription = "Icon",
-                    tint = Color.Yellow,
-                    modifier = Modifier.size(35.dp)
-                )
-
-                Text(
-                    text = "Warning: This can take sometime around 20 to 30 minutes... Please wait to stop loading",
-                    color = Color.Yellow,
-                    modifier = modifier.padding(start = 6.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
+            
             Button(onClick = {
                 if (!animationStart) {
                     selectedApp?.let { app ->
