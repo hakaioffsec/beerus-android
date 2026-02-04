@@ -6,21 +6,21 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils
 
-class RootManager : ViewModel() {
+class MagiskManager : ViewModel() {
     companion object {
-        var showRootDialog by mutableStateOf(false)
+        var showMagiskDialog by mutableStateOf(false)
             private set
 
-        fun showsRootDialog() {
-            showRootDialog = true
+        fun showsMagiskDialog() {
+            showMagiskDialog = true
         }
 
-        fun dismissRootDialog() {
-            showRootDialog = false
+        fun dismissMagiskDialog() {
+            showMagiskDialog = false
         }
 
-        fun confirmRootDialog() {
-            showRootDialog = false
+        fun confirmMagiskDialog() {
+            showMagiskDialog = false
             CommandUtils.runSuCommand("reboot") {}
         }
     }

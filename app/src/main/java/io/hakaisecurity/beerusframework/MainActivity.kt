@@ -17,9 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
-import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectKernelSu
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectMagisk
-import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectRootModuleInstalled
+import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectMagiskModuleInstalled
 import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.getFridaVersions
 import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.readFridaCurrentVersion
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.currentFridaVersionFromList
@@ -27,11 +26,11 @@ import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.fridaVe
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.updateFridaDownloadedVersion
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmRootModuleInstallerDialog
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.dismissRootModuleInstallerDialog
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showRootModuleInstallerDialog
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showsRootModuleInstallerDialog
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasRoot
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmMagiskModuleInstallerDialog
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.dismissMagiskModuleInstallerDialog
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showMagiskModuleInstallerDialog
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showsMagiskModuleInstallerDialog
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasMagisk
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasModule
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 
@@ -62,32 +61,14 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     detectMagisk { isMagisk ->
                         if (isMagisk) {
-                            updateHasRoot(true)
+                            updateHasMagisk(true)
 
-                            detectRootModuleInstalled { isModuleInstalled ->
+                            detectMagiskModuleInstalled { isModuleInstalled ->
                                 if (!isModuleInstalled) {
-                                    showsRootModuleInstallerDialog()
+                                    showsMagiskModuleInstallerDialog()
                                 }else{
                                     updateHasModule(true)
                                 }
-                            }
-                        } else {
-                            try {
-                                detectKernelSu{ isKernelSu ->
-                                    if (isKernelSu){
-                                        updateHasRoot(true)
-
-                                        detectRootModuleInstalled { isModuleInstalled ->
-                                            if (!isModuleInstalled) {
-                                                showsRootModuleInstallerDialog()
-                                            }else{
-                                                updateHasModule(true)
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (t: Throwable) {
-                                throw t
                             }
                         }
                     }
@@ -107,10 +88,10 @@ class MainActivity : ComponentActivity() {
 
                 NavigationFunc(context = context, modifier = Modifier)
 
-                if (showRootModuleInstallerDialog) {
+                if (showMagiskModuleInstallerDialog) {
                     MagikModuleInstallDialog(
-                        onDismiss = { dismissRootModuleInstallerDialog() },
-                        onConfirm = { confirmRootModuleInstallerDialog(context) }
+                        onDismiss = { dismissMagiskModuleInstallerDialog() },
+                        onConfirm = { confirmMagiskModuleInstallerDialog(context) }
                     )
                 }
             }

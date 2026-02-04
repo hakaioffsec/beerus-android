@@ -3,7 +3,6 @@ package io.hakaisecurity.beerusframework
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -67,7 +66,7 @@ import io.hakaisecurity.beerusframework.composables.ADBScreen
 import io.hakaisecurity.beerusframework.composables.BootScreen
 import io.hakaisecurity.beerusframework.composables.FridaScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
-import io.hakaisecurity.beerusframework.composables.RootScreen
+import io.hakaisecurity.beerusframework.composables.MagiskScreen
 import io.hakaisecurity.beerusframework.composables.MemDumpScreen
 import io.hakaisecurity.beerusframework.composables.ManifestScreen
 import io.hakaisecurity.beerusframework.composables.PropertiesScreen
@@ -78,7 +77,7 @@ import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.an
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.moduleName
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateNavigationState
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasRoot
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasMagisk
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
 import io.hakaisecurity.beerusframework.ui.theme.Home
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
@@ -88,7 +87,7 @@ import io.hakaisecurity.beerusframework.ui.theme.iconProxy
 import io.hakaisecurity.beerusframework.ui.theme.restart_alt
 import io.hakaisecurity.beerusframework.ui.theme.FiletypeXml
 import androidx.core.net.toUri
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmRootModuleInstallerDialog
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmMagiskModuleInstallerDialog
 
 @SuppressLint("NewApi")
 @Composable
@@ -96,13 +95,13 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dec() * 0.55f
 
-    var noRoot by remember { mutableStateOf(false) }
+    var noMagisk by remember { mutableStateOf(false) }
     var noModule by remember { mutableStateOf(false) }
 
     var selectedItem by remember { mutableStateOf("Home") }
 
     val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
-    val iconRoot = ImageVector.vectorResource(id = R.drawable.rooticon)
+    val iconMagisk = ImageVector.vectorResource(id = R.drawable.magiskicon)
     val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
     val iconProperty = ImageVector.vectorResource(id = R.drawable.propertyicon)
 
@@ -164,8 +163,8 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
         state = listState,
         contentPadding = PaddingValues(top = 60.dp)
     ) {
-        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Root Manager", "Properties", "Boot Options")
-        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconRoot, iconProperty, restart_alt)
+        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Properties", "Boot Options")
+        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconMagisk, iconProperty, restart_alt)
 
         itemsIndexed(items) { index, item ->
             Row(
@@ -180,8 +179,8 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
             ) {
                 Button(
                     onClick = {
-                        if (!hasRoot && (item == "Root Manager" || item == "Boot Options" || item == "Properties")){
-                            noRoot = true
+                        if (!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")){
+                            noMagisk = true
                         } else {
                             if (!hasModule && (item == "Boot Options" || item == "Properties")) {
                                 noModule = true
@@ -194,7 +193,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor =
-                            if ((!hasRoot && (item == "Root Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && item == "Boot Options")){
+                            if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && item == "Boot Options")){
                                 Color.Transparent
                             } else {
                                 if (selectedItem == item) {
@@ -226,7 +225,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
                             Icon(
                                 imageVector = icons[index],
                                 contentDescription = "Icon",
-                                tint = if ((!hasRoot && (item == "Root Manager" || item == "Boot Options")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) {
+                                tint = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) {
                                     Color(0xFF858585)
                                 } else {
                                     if (selectedItem == item) {
@@ -244,7 +243,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
                             modifier = Modifier.padding(8.dp, 0.dp, 0.dp, 0.dp),
                             textAlign = TextAlign.Right,
                             fontSize = 14.sp,
-                            color = if ((!hasRoot && (item == "Root Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) Color(0xFF858585) else Color.White,
+                            color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) Color(0xFF858585) else Color.White,
                             fontFamily = ibmFont
                         )
                     }
@@ -253,36 +252,25 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
         }
     }
 
-    if (noRoot) {
+    if (noMagisk) {
         AlertDialog(
-            onDismissRequest = { noRoot = false },
+            onDismissRequest = { noMagisk = false },
             title = { Text("Note") },
-            text = {
-                Text(
-                    text = "Hey, if you want to use this feature you may install Magisk or KernelSU!",
-                    fontSize = 18.sp
-                )
-            },
+            text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
             confirmButton = {
                 Button(onClick = {
-                    noRoot = false
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, "https://topjohnwu.github.io/Magisk/".toUri())
-                    )
-                }) { Text("Magisk") }
+                    noMagisk = false
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                        data = "https://topjohnwu.github.io/Magisk/".toUri()
+                    }
+                    context.startActivity(intent)
+                }) {
+                    Text("OK")
+                }
             },
             dismissButton = {
-                Row {
-                    TextButton(onClick = {
-                        noRoot = false
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, "https://kernelsu.org/".toUri())
-                        )
-                    }) { Text("KernelSU") }
-
-                    TextButton(onClick = { noRoot = false }) {
-                        Text("Dismiss", fontFamily = ibmFont)
-                    }
+                TextButton(onClick = { noMagisk = false }) {
+                    Text("Do After", fontFamily = ibmFont)
                 }
             }
         )
@@ -296,7 +284,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
             confirmButton = {
                 Button(onClick = {
                     noModule = false
-                    confirmRootModuleInstallerDialog(context)
+                    confirmMagiskModuleInstallerDialog(context)
                 }) {
                     Text("Install")
                 }
@@ -451,7 +439,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                 "Proxy Profiles" -> ProxyScreen(modifier, activity)
                 "Manifest" -> ManifestScreen(modifier)
                 "ADB O/ Network" -> ADBScreen(modifier, activity)
-                "Root Manager" -> RootScreen(modifier, activity)
+                "Magisk Manager" -> MagiskScreen(modifier, activity)
                 "Properties" -> PropertiesScreen(modifier, activity)
                 "Boot Options" -> BootScreen(modifier)
                 else -> HomeScreen(modifier)

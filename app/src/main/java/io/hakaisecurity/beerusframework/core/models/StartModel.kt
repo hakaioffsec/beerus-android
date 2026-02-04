@@ -9,30 +9,30 @@ import io.hakaisecurity.beerusframework.core.functions.Start.Companion.installBe
 
 class StartModel: ViewModel() {
     companion object {
-        var hasRoot by mutableStateOf(false)
+        var hasMagisk by mutableStateOf(false)
             private set
 
         var hasModule by mutableStateOf(false)
             private set
 
-        var showRootModuleInstallerDialog by mutableStateOf(false)
+        var showMagiskModuleInstallerDialog by mutableStateOf(false)
             private set
 
-        fun showsRootModuleInstallerDialog() {
-            showRootModuleInstallerDialog = true
+        fun showsMagiskModuleInstallerDialog() {
+            showMagiskModuleInstallerDialog = true
         }
 
-        fun dismissRootModuleInstallerDialog() {
-            showRootModuleInstallerDialog = false
+        fun dismissMagiskModuleInstallerDialog() {
+            showMagiskModuleInstallerDialog = false
         }
 
-        fun confirmRootModuleInstallerDialog(context: Context) {
-            showRootModuleInstallerDialog = false
+        fun confirmMagiskModuleInstallerDialog(context: Context) {
+            showMagiskModuleInstallerDialog = false
             installBeerusModule(context)
         }
 
-        fun updateHasRoot(value: Boolean){
-            hasRoot = value
+        fun updateHasMagisk(value: Boolean){
+            hasMagisk = value
         }
 
         fun updateHasModule(value: Boolean){

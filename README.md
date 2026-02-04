@@ -42,7 +42,7 @@ Beerus Framework is a powerful and modular toolkit designed to support every sta
 - **Memory Dumping** – Capture in-memory secrets and runtime objects.
 - **ADB over Network** – Connect to ADB wirelessly, no USB cable required.
 - **Global Proxy Profiles** – Enable system-wide proxying for intercepting traffic.
-- **Root Module Manager** – Manage root modules with ease.
+- **Magisk Module Manager** – Manage Magisk modules with ease.
 - **Boot Options** – Automatically start Frida Server, ADB, and more on boot.
 - **System Certificate Promotion** – Convert user-installed CAs into trusted system certificates for MITM testing.
 - **Property Changes** – Modify Android system properties for testing and bypass scenarios.
@@ -61,7 +61,7 @@ To build the project, you need **Android Studio** with both the **SDK** and **ND
 During the build process, Gradle compiles one native binary:
 - Frida Core
 
-This binary is zipped and included in the APK’s assets along with the Beerus Root Module.
+This binary is zipped and included in the APK’s assets along with the Beerus Magisk Module.
 
 <p align="center">
   <img width="800px" src="./readmeSources/dev.png" alt="Project Build">
@@ -69,7 +69,7 @@ This binary is zipped and included in the APK’s assets along with the Beerus R
 
 ## 📦 Downloads
 
-The official Beerus Framework builds are available exclusively on [GitHub](https://github.com/hakaioffsec/beerus-android/releases/tag/Release).
+The official Beerus Framework builds are available exclusively on [GitHub](https://github.com/hakaioffsec/beerus-android).
 
 Click below to download the latest Beerus APK:
 
@@ -80,18 +80,17 @@ Click below to download the latest Beerus APK:
 To get started:
 
 1. Install the APK on your **rooted** device.
-2. For full functionality, we recommend [Magisk](https://github.com/topjohnwu/Magisk) or [KernelSu](https://kernelsu.org/pt_BR/) to enable features like:
+2. For full functionality, we recommend [Magisk](https://github.com/topjohnwu/Magisk) to enable features like:
    - Frida Core Instrumentation
-   - Root Module Management
+   - Magisk Module Management
    - Property Changes
    - Boot Options
-3. If using KernelSu, give Beerus Framework root permissions.
-4. On first run, Beerus will prompt you to install its Root Module.
+3. On first run, Beerus will prompt you to install its Magisk Module.
 
 ## ⚙️ Built Using <a name="built-using"></a>
 
 - [Frida Core](https://github.com/frida/frida-core) – Instrumentation built-in on device
-- [Root Modules](https://topjohnwu.github.io/Magisk/guides.html) – For enabling advanced features
+- [Magisk](https://topjohnwu.github.io/Magisk/guides.html) – For enabling advanced features
 
 ## ✍️ Authors <a name="authors"></a>
 
@@ -109,7 +108,6 @@ To get started:
 - [Fridump](https://github.com/Nightbringer21/fridump) – Dump memory and loaded modules from Android apps using Frida.
 - [Wireless ADB: ADB over TCP/IP](https://play.google.com/store/apps/details?id=com.origiq.wirelessadb&hl=pt_BR) – Connect to Android devices via Wi-Fi for debugging and testing.
 - [Magisk](https://github.com/topjohnwu/Magisk) – Suite of open source tools for customizing Android, enabling root access and more.
-- [KernelSu](https://kernelsu.org/pt_BR/) – Suite of open source tools for customizing Android, enabling root access and more on Kernel Level.
 - [Always Trust User Certs](https://github.com/NVISOsecurity/AlwaysTrustUserCerts) – Promote user-installed certificates to the system store.
 - [Magisk Frida](https://github.com/ViRb3/magisk-frida) – Automatically starts Frida Server on boot using Magisk.
 - [JADX](https://github.com/skylot/jadx) – Dex to Java decompiler for Android applications.

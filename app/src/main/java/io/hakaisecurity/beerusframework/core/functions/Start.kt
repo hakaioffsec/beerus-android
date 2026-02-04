@@ -7,9 +7,11 @@ import java.io.File
 
 class Start {
     companion object{
-        fun detectRootModuleInstalled(callback: (Boolean) -> Unit) {
+        fun detectMagiskModuleInstalled(callback: (Boolean) -> Unit) {
             val cmd = """
-                if [ -d /data/adb/modules/beerusRootModule ]; then
+                if ( [ -f /system/lib/libzygisk.so ] || [ -f /system/lib64/libzygisk.so ] || \
+                     [ -f /system/bin/magisk ] || [ -f /sbin/magisk ] ) && \
+                   [ -d /data/adb/modules/beerusMagiskModule ]; then
                     echo true
                 else
                     echo false
@@ -36,24 +38,12 @@ class Start {
             }
         }
 
-        fun detectKernelSu(callback: (Boolean) -> Unit) {
-            val ok = try {
-                val p = Runtime.getRuntime().exec(arrayOf("su", "-c", "ksud -V"))
-                val output = p.inputStream.bufferedReader().readText()
-                p.waitFor()
-                Regex("""\bksud\s+\d+\.\d+\.\d+\b""").containsMatchIn(output)
-            } catch (_: Throwable) {
-                false
-            }
-            callback(ok)
-        }
-
         fun installBeerusModule(context: Context){
-            val assetZipNameRoot = "beerusRootModule.zip"
-            val modulePathRoot = "/data/adb/modules/beerusRootModule"
-            val zipDestPathRoot = "$modulePathRoot/beerusRootModule.zip"
+            val assetZipNameMagisk = "beerusMagiskModule.zip"
+            val modulePathMagisk = "/data/adb/modules/beerusMagiskModule"
+            val zipDestPathMagisk = "$modulePathMagisk/beerusMagiskModule.zip"
 
-            val binPath = "/data/adb/modules/beerusRootModule/system/bin"
+            val binPath = "/data/adb/modules/beerusMagiskModule/system/bin"
 
             val assetZipNameFrida = "fridaCore.zip"
             val zipDestPathFrida = "$binPath/fridaCore.zip"
@@ -61,12 +51,12 @@ class Start {
             val assetZipNameDB = "dbAgent.zip"
             val zipDestPathDB = "$binPath/dbAgent.zip"
 
-            val tempZipRoot = File(context.cacheDir, assetZipNameRoot)
+            val tempZipMagisk = File(context.cacheDir, assetZipNameMagisk)
             val tempZipFrida = File(context.cacheDir, assetZipNameFrida)
             val tempZipDB = File(context.cacheDir, assetZipNameDB)
 
-            context.assets.open(assetZipNameRoot).use { input ->
-                tempZipRoot.outputStream().use { output ->
+            context.assets.open(assetZipNameMagisk).use { input ->
+                tempZipMagisk.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
@@ -84,11 +74,11 @@ class Start {
             }
 
             runSuCommand("""
-                mkdir -p $modulePathRoot &&
-                cp ${tempZipRoot.absolutePath} $zipDestPathRoot &&
-                cd $modulePathRoot &&
-                unzip $assetZipNameRoot &&
-                rm -rf $assetZipNameRoot &&
+                mkdir -p $modulePathMagisk &&
+                cp ${tempZipMagisk.absolutePath} $zipDestPathMagisk &&
+                cd $modulePathMagisk &&
+                unzip $assetZipNameMagisk &&
+                rm -rf $assetZipNameMagisk &&
                 rm -rf $binPath/dummy &&
                 cp ${tempZipFrida.absolutePath} $zipDestPathFrida &&
                 cd $binPath &&
