@@ -38,32 +38,18 @@ class RootModule {
             }
         }
 
-        fun getAllModules(modulePropsList: MutableList<String>) {
+        fun getAllModules(callback: (List<String>) -> Unit) {
             runSuCommand("find /data/adb/modules/ -type f -name \"module.prop\" -exec ls -l {} \\; | cut -d \" \" -f 8") { result ->
-                result.split("\n").filter { it.isNotBlank() }.let { paths ->
-                    modulePropsList.addAll(paths)
-                }
+                val paths = result.split("\n").filter { it.isNotBlank() }
+                callback(paths)
             }
         }
 
-        fun getStatusModule(modulePath: String, status: String): Boolean {
+        fun getStatusModule(modulePath: String, status: String, callback: (Boolean) -> Unit) {
             val path = modulePath.replace("module.prop", status, ignoreCase = true)
-            var result = false
-
-            val lock = Object()
-
             runSuCommand("ls $path") { output ->
-                result = output.trim() == path
-                synchronized(lock) {
-                    lock.notify()
-                }
+                callback(output.trim() == path)
             }
-
-            synchronized(lock) {
-                lock.wait()
-            }
-
-            return result
         }
 
 
