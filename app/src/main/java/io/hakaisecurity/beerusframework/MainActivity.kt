@@ -17,9 +17,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import android.os.Handler
+import android.os.Looper
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectKernelSu
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectMagisk
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectRootModuleInstalled
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.getAllModules
+import io.hakaisecurity.beerusframework.core.models.RootModulesState
 import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.getFridaVersions
 import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.readFridaCurrentVersion
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.currentFridaVersionFromList
@@ -59,11 +63,14 @@ class MainActivity : ComponentActivity() {
             ) {
                 val context = LocalContext.current
 
+                val mainHandler = Handler(Looper.getMainLooper())
                 LaunchedEffect(Unit) {
                     detectMagisk { isMagisk ->
                         if (isMagisk) {
                             updateHasRoot(true)
-
+                            getAllModules { paths ->
+                                mainHandler.post { RootModulesState.setModulePaths(paths) }
+                            }
                             detectRootModuleInstalled { isModuleInstalled ->
                                 if (!isModuleInstalled) {
                                     showsRootModuleInstallerDialog()
@@ -76,7 +83,9 @@ class MainActivity : ComponentActivity() {
                                 detectKernelSu{ isKernelSu ->
                                     if (isKernelSu){
                                         updateHasRoot(true)
-
+                                        getAllModules { paths ->
+                                            mainHandler.post { RootModulesState.setModulePaths(paths) }
+                                        }
                                         detectRootModuleInstalled { isModuleInstalled ->
                                             if (!isModuleInstalled) {
                                                 showsRootModuleInstallerDialog()
