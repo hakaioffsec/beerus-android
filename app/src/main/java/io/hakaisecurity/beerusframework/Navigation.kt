@@ -16,14 +16,18 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -63,32 +67,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
 import io.hakaisecurity.beerusframework.composables.ADBScreen
 import io.hakaisecurity.beerusframework.composables.BootScreen
 import io.hakaisecurity.beerusframework.composables.FridaScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
-import io.hakaisecurity.beerusframework.composables.RootScreen
-import io.hakaisecurity.beerusframework.composables.MemDumpScreen
 import io.hakaisecurity.beerusframework.composables.ManifestScreen
+import io.hakaisecurity.beerusframework.composables.MemDumpScreen
 import io.hakaisecurity.beerusframework.composables.PropertiesScreen
 import io.hakaisecurity.beerusframework.composables.ProxyScreen
+import io.hakaisecurity.beerusframework.composables.RootScreen
 import io.hakaisecurity.beerusframework.composables.SandboxScreen
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.moduleName
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateNavigationState
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasRoot
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasRoot
 import io.hakaisecurity.beerusframework.ui.theme.Home
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 import io.hakaisecurity.beerusframework.ui.theme.iconMemory
 import io.hakaisecurity.beerusframework.ui.theme.iconPackage
 import io.hakaisecurity.beerusframework.ui.theme.iconProxy
 import io.hakaisecurity.beerusframework.ui.theme.restart_alt
-import io.hakaisecurity.beerusframework.ui.theme.FiletypeXml
-import androidx.core.net.toUri
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmRootModuleInstallerDialog
 
 @SuppressLint("NewApi")
 @Composable
@@ -115,11 +118,8 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     )
 
     LaunchedEffect(listState.isScrollInProgress) {
-        if (listState.isScrollInProgress) {
-            isScrolling = true
-        } else {
+        if (!listState.isScrollInProgress) {
             kotlinx.coroutines.delay(1000)
-            isScrolling = false
         }
     }
 
@@ -310,6 +310,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("NewApi")
 @Composable
 fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
@@ -406,7 +407,8 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
     ) {
         Box(modifier = modifier
             .fillMaxSize()
-            .padding(top = 30.dp, start = 30.dp)) {
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(top = 10.dp, start = 30.dp)) {
             Icon(imageVector = if (!animationStart) iconMenu else iconClose,
                 contentDescription = "Icon",
                 tint = Color.White,
@@ -423,7 +425,8 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
 
         Box(modifier = modifier
             .fillMaxSize()
-            .padding(top = 30.dp)) {
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(top = 10.dp)) {
             Row(
                 modifier = modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -442,6 +445,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
         ) {
             when (moduleName) {
                 "Home" -> HomeScreen(modifier)

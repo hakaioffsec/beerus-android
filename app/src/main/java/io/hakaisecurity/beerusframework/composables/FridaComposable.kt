@@ -20,11 +20,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,10 +34,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,27 +55,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
+import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
+import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
+import io.github.rosemoe.sora.langs.textmate.registry.FileProviderRegistry
+import io.github.rosemoe.sora.langs.textmate.registry.GrammarRegistry
+import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
+import io.github.rosemoe.sora.langs.textmate.registry.model.ThemeModel
+import io.github.rosemoe.sora.langs.textmate.registry.provider.AssetsFileResolver
+import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 import io.hakaisecurity.beerusframework.R
 import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.deleteScript
 import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.getFileNameFromUri
@@ -94,16 +90,17 @@ import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.package
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmRootModuleInstallerDialog
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasRoot
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasRoot
 import io.hakaisecurity.beerusframework.ui.theme.Add
 import io.hakaisecurity.beerusframework.ui.theme.Arrow_back
-import io.hakaisecurity.beerusframework.ui.theme.JsSyntaxHighlighter
 import io.hakaisecurity.beerusframework.ui.theme.Trash
 import io.hakaisecurity.beerusframework.ui.theme.Upload
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
+import org.eclipse.tm4e.core.registry.IThemeSource
 import java.io.File
 
+@ExperimentalLayoutApi
 @Composable
 fun FridaScreen(modifier: Modifier, activity: Activity) {
     var expanded by remember { mutableStateOf(false) }
@@ -111,6 +108,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
     var newVersionText by remember { mutableStateOf("") }
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dec() * .30f
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val borderRadius by animateFloatAsState(
         targetValue = if (animationStart) 16f else 0f,
@@ -125,16 +123,16 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
         scriptsState.value = getScriptsContent(activity)
     }
 
-    // ***** IMPORTANT: keep TextFieldValue, not String *****
     var selectedScriptContent by remember { mutableStateOf(TextFieldValue("")) }
     var selectedScript by remember { mutableStateOf("") }
     var isEditorReady by remember { mutableStateOf(false) }
+    var editorRef by remember { mutableStateOf<io.github.rosemoe.sora.widget.CodeEditor?>(null) }
 
     var newScriptName by remember { mutableStateOf("") }
     var noModule by remember { mutableStateOf(false) }
     var noRoot by remember { mutableStateOf(false) }
 
-    LaunchedEffect(selectedScript) {
+    LaunchedEffect(selectedScript, inEditorMode) {
         if (selectedScript.isNotEmpty() && inEditorMode) {
             kotlinx.coroutines.delay(300)
             isEditorReady = true
@@ -372,10 +370,11 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                     ) {
                         Box(
                             modifier = Modifier
+                                .weight(1f)
                                 .clickable {
                                     if (!inEditorMode && hasModule) {
                                         selectedScript = fileName
-                                        selectedScriptContent = TextFieldValue(content) // keep selection stateable
+                                        selectedScriptContent = TextFieldValue(content)
                                         isEditorReady = false
                                         inEditorMode = true
                                     }
@@ -528,6 +527,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                                     indication = null,
                                     interactionSource = remember { MutableInteractionSource() }
                                 ) {
+                                    keyboardController?.hide()
                                     inEditorMode = false
                                     isEditorReady = false
                                 }
@@ -549,13 +549,11 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                 }
 
                 if (isEditorReady) {
-                    CodeEditor(
-                        value = selectedScriptContent,
-                        onValueChange = { newValue ->
-                            // keep selection/cursor; don't rebuild from String
-                            selectedScriptContent = newValue
-                        },
-                        modifier = modifier.weight(1f)
+                    SoraCodeEditor(
+                        initialText = selectedScriptContent.text,
+                        onEditorCreated = { editor -> editorRef = editor },
+                        modifier = modifier.weight(1f),
+                        context = activity
                     )
                 } else {
                     Box(
@@ -593,7 +591,7 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
                     Button(
                         onClick = {
                             // normalize only when persisting
-                            val toPersist = selectedScriptContent.text.replace("\r\n", "\n")
+                            val toPersist = (editorRef?.text?.toString() ?: selectedScriptContent.text).replace("\r\n", "\n")
                             saveScript(activity, selectedScript, toPersist)
                             refreshScripts()
                             Toast.makeText(activity, "Script saved successfully", Toast.LENGTH_SHORT).show()
@@ -681,37 +679,101 @@ fun FridaScreen(modifier: Modifier, activity: Activity) {
     }
 }
 
-@Composable
-fun CodeEditor(
-    value: TextFieldValue,
-    onValueChange: (TextFieldValue) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val vScroll = rememberScrollState()
 
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        textStyle = TextStyle(
-            color = Color.White,
-            fontSize = 12.sp,
-            fontFamily = ibmFont,
-            letterSpacing = 0.sp
-        ),
+/**
+ * Singleton to manage TextMate initialization.
+ */
+private object TextMateInitializer {
+    private var initialized = false
+    private const val TAG = "TextMateInit"
+    
+    fun init(context: Context) {
+        if (initialized) return
+        synchronized(this) {
+            if (initialized) return
+            try {
+                android.util.Log.d(TAG, "Starting TextMate initialization...")
+                
+                FileProviderRegistry.getInstance().addFileProvider(
+                    AssetsFileResolver(context.assets)
+                )
+                android.util.Log.d(TAG, "FileProvider registered")
+                
+                val themeInputStream = context.assets.open("textmate/darcula.json")
+                val themeSource = IThemeSource.fromInputStream(themeInputStream, "darcula.json", null)
+                val themeModel = ThemeModel(themeSource, "darcula")
+                ThemeRegistry.getInstance().loadTheme(themeModel)
+                ThemeRegistry.getInstance().setTheme("darcula")
+                android.util.Log.d(TAG, "Theme loaded and set")
+                
+                GrammarRegistry.getInstance().loadGrammars("textmate/languages.json")
+                android.util.Log.d(TAG, "Grammars loaded")
+                
+                initialized = true
+                android.util.Log.d(TAG, "TextMate initialization complete!")
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "TextMate init failed: ${e.message}", e)
+            }
+        }
+    }
+}
+
+/**
+ * High-performance code editor using Sora Editor with TextMate syntax highlighting.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun SoraCodeEditor(
+    initialText: String,
+    onEditorCreated: (io.github.rosemoe.sora.widget.CodeEditor) -> Unit,
+    modifier: Modifier = Modifier,
+    context: Context
+) {
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(vScroll)
-            .padding(10.dp)
-            .zIndex(1f),
-        keyboardOptions = KeyboardOptions(
-            capitalization = KeyboardCapitalization.None,
-            autoCorrect = false,
-            keyboardType = KeyboardType.Text,
-            imeAction = ImeAction.None
-        ),
-        cursorBrush = SolidColor(Color.White),
-        visualTransformation = JsSyntaxHighlighter
-    )
+            .imePadding()
+    ) {
+        AndroidView(
+            factory = { ctx ->
+                TextMateInitializer.init(context)
+                
+                io.github.rosemoe.sora.widget.CodeEditor(ctx).apply {
+                    try {
+                        android.util.Log.d("SoraEditor", "Creating TextMate color scheme...")
+                        val textMateScheme = TextMateColorScheme.create(ThemeRegistry.getInstance())
+                        colorScheme = textMateScheme
+                        android.util.Log.d("SoraEditor", "Color scheme applied")
+                        
+                        android.util.Log.d("SoraEditor", "Creating JavaScript language...")
+                        val jsLanguage = TextMateLanguage.create("source.js", true)
+                        setEditorLanguage(jsLanguage)
+                        android.util.Log.d("SoraEditor", "JavaScript language applied successfully!")
+                    } catch (e: Exception) {
+                        android.util.Log.e("SoraEditor", "Error setting up TextMate: ${e.message}", e)
+                        colorScheme = EditorColorScheme().apply {
+                            setColor(EditorColorScheme.WHOLE_BACKGROUND, 0xFF1E1E1E.toInt())
+                            setColor(EditorColorScheme.TEXT_NORMAL, 0xFFD4D4D4.toInt())
+                            setColor(EditorColorScheme.LINE_NUMBER_BACKGROUND, 0xFF1E1E1E.toInt())
+                            setColor(EditorColorScheme.LINE_NUMBER, 0xFF858585.toInt())
+                            setColor(EditorColorScheme.CURRENT_LINE, 0xFF2D2D2D.toInt())
+                        }
+                    }
+                    
+                    setTextSize(14f)
+                    isLineNumberEnabled = true
+                    isWordwrap = false
+                    setInterceptParentHorizontalScrollIfNeeded(true)
+                    
+                    setText(initialText)
+                    onEditorCreated(this)
+                }
+            },
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        )
+    }
 }
 
 @Composable
