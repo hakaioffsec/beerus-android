@@ -1,9 +1,9 @@
 package io.hakaisecurity.beerusframework
 
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.AlertDialog
@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import android.os.Handler
 import android.os.Looper
+import androidx.core.view.WindowCompat
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectKernelSu
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectMagisk
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectRootModuleInstalled
@@ -35,14 +36,16 @@ import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirm
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.dismissRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showsRootModuleInstallerDialog
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasRoot
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasModule
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasRoot
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+        enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             Surface(

@@ -1,0 +1,9 @@
+{
+  "languages": [
+    {
+      "grammar": "textmate/javascript.tmLanguage.json",
+      "name": "javascript",
+      "scopeName": "source.js"
+    }
+  ]
+}
