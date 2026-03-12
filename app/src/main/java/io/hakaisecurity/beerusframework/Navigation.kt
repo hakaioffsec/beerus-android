@@ -433,7 +433,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = moduleName,
+                    text = if (moduleName != "Home") moduleName else "",
                     fontFamily = ibmFont,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,

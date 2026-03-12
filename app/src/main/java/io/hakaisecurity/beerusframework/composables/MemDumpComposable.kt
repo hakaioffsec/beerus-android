@@ -78,10 +78,12 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
     val sheetState = rememberModalBottomSheetState()
 
     var regexIsValid by remember { mutableStateOf(true) }
-    val addressRegex = Regex("^(https?://)?((localhost)|(\\d{1,3}\\.){3}\\d{1,3}|([\\dA-Za-z-]+\\.)+[A-Za-z]{2,})(:(?:[1-9]\\d{0,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5]))?(\\/([\\w %&,.~\\-]+)?)*\\/?\$")
+    val addressRegex = Regex("^((https?://)|(grpc://))?((localhost)|(\\d{1,3}\\.){3}\\d{1,3}|([\\dA-Za-z-]+\\.)+[A-Za-z]{2,})(:(?:[1-9]\\d{0,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5]))?(\\/([\\w %&,.~\\-]+)?)*\\/?\$")
 
     fun getServer(): String {
-        return if (server.startsWith("http") || server.startsWith("https")) {
+        return if (server.startsWith("grpc://")) {
+            server
+        } else if (server.startsWith("http") || server.startsWith("https")) {
             server
         } else {
             "http://$server"

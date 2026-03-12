@@ -16,6 +16,8 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
+import io.hakaisecurity.beerusframework.core.network.grpc.BeerusGrpcUploader
+import io.hakaisecurity.beerusframework.grpc.ArtifactKind
 
 object MemoryDump {
     fun collectionTriagge(context: Context, server:String, isUSB: Boolean, selectionData: String, onComplete: (String) -> Unit) {
@@ -91,9 +93,24 @@ object MemoryDump {
                     rm -rf "${quickFile.absolutePath}" "${stringDumpDir.absolutePath}"
                 """.trimIndent()) {
                     if (!isUSB) {
-                        sendFile(tarFile.absolutePath, server) {
-                            runSuCommand("rm -f ${tarFile.absolutePath}") {
-                                onComplete("OK")
+                        if (server.trim().startsWith("grpc://")) {
+                            BeerusGrpcUploader.uploadTarGz(
+                                server = server,
+                                filePath = tarFile.absolutePath,
+                                kind = ArtifactKind.MEMORY_DUMP_TAR_GZ,
+                                packageName = null,
+                                deviceId = null,
+                                extractTarGz = true
+                            ) { result ->
+                                runSuCommand("rm -f ${tarFile.absolutePath}") {
+                                    onComplete(if (result != null && result.success) "OK" else "FAIL")
+                                }
+                            }
+                        } else {
+                            sendFile(tarFile.absolutePath, server) {
+                                runSuCommand("rm -f ${tarFile.absolutePath}") {
+                                    onComplete("OK")
+                                }
                             }
                         }
                     } else {
@@ -140,6 +157,10 @@ object MemoryDump {
             onComplete(true)
             return
         } else {
+            if (server.trim().startsWith("grpc://")) {
+                BeerusGrpcUploader.check(server) { ok -> onComplete(ok) }
+                return
+            }
             val request = Request.Builder().url("$server/check").get().build()
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
