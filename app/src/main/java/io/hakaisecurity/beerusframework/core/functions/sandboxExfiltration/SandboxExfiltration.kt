@@ -13,6 +13,8 @@ import okhttp3.Response
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import io.hakaisecurity.beerusframework.core.network.grpc.BeerusGrpcUploader
+import io.hakaisecurity.beerusframework.grpc.ArtifactKind
 
 class SandboxExfiltration {
     private val client = OkHttpClient()
@@ -43,17 +45,33 @@ class SandboxExfiltration {
 
     }
 
-    fun prepareFileToSend(destinationPath: String, server: String, isUSB: Boolean, onComplete: (String) -> Unit) {
+    fun prepareFileToSend(destinationPath: String, server: String, isUSB: Boolean, packageName: String?, onComplete: (String) -> Unit) {
         runSuCommand("tar -czf $destinationPath.tar.gz $destinationPath/*") { tarResult ->
             if (tarResult.isBlank()) {
                 onComplete("fail")
             } else {
                 runSuCommand("chmod 655 $destinationPath.tar.gz && rm -rf $destinationPath") {
                     if (!isUSB) {
-                        sendFile(fileName="$destinationPath.tar.gz", server=server) { R ->
-                            runSuCommand("rm -rf $destinationPath") {}
-                            runSuCommand("rm -rf $destinationPath.tar.gz") {}
-                            onComplete("success")
+                        val tarPath = "$destinationPath.tar.gz"
+                        if (server.trim().startsWith("grpc://")) {
+                            BeerusGrpcUploader.uploadTarGz(
+                                server = server,
+                                filePath = tarPath,
+                                kind = ArtifactKind.SANDBOX_EXFILTRATION_TAR_GZ,
+                                packageName = packageName,
+                                deviceId = null,
+                                extractTarGz = true
+                            ) { result ->
+                                runSuCommand("rm -rf $destinationPath") {}
+                                runSuCommand("rm -rf $tarPath") {}
+                                onComplete(if (result != null && result.success) "success" else "fail")
+                            }
+                        } else {
+                            sendFile(fileName = tarPath, server = server) { _ ->
+                                runSuCommand("rm -rf $destinationPath") {}
+                                runSuCommand("rm -rf $tarPath") {}
+                                onComplete("success")
+                            }
                         }
                     } else {
                         onComplete("success")
@@ -73,12 +91,12 @@ class SandboxExfiltration {
             runSuCommand("cp -r $dataPath $destinationPath") {
                 if (addBinary) {
                     runSuCommand("cp -r $sourceFile/*.apk $destinationPath") {
-                        prepareFileToSend(destinationPath, server, isUSB) { status ->
+                        prepareFileToSend(destinationPath, server, isUSB, app.identifier) { status ->
                             onComplete(status)
                         }
                     }
                 } else {
-                    prepareFileToSend(destinationPath, server, isUSB) { status ->
+                    prepareFileToSend(destinationPath, server, isUSB, app.identifier) { status ->
                         onComplete(status)
                     }
                 }
@@ -91,6 +109,10 @@ class SandboxExfiltration {
             onComplete(true)
             return
         } else {
+            if (server.trim().startsWith("grpc://")) {
+                BeerusGrpcUploader.check(server) { ok -> onComplete(ok) }
+                return
+            }
             val request = Request.Builder().url("$server/check").get().build()
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {

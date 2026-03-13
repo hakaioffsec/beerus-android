@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package beerus.transfer.v1;
+
+option java_package = "io.hakaisecurity.beerusframework.grpc";
+option java_multiple_files = true;
+option java_outer_classname = "BeerusTransferProto";
+
+service BeerusTransfer {
+  rpc Check(CheckRequest) returns (CheckResponse);
+  rpc Upload(stream UploadChunk) returns (UploadResult);
+}
+
+message CheckRequest {}
+
+message CheckResponse {
+  string app = 1;
+  string version = 2;
+}
+
+enum ArtifactKind {
+  ARTIFACT_KIND_UNSPECIFIED = 0;
+  SANDBOX_EXFILTRATION_TAR_GZ = 1;
+  MEMORY_DUMP_TAR_GZ = 2;
+}
+
+message UploadMetadata {
+  ArtifactKind kind = 1;
+  string filename = 2;
+  string package_name = 3;
+  string device_id = 4;
+  bool extract_tar_gz = 5;
+}
+
+message UploadChunk {
+  int64 seq = 1;
+  oneof payload {
+    UploadMetadata meta = 2;
+    bytes data = 3;
+  }
+}
+
+message UploadResult {
+  bool success = 1;
+  string message = 2;
+  string saved_path = 3;
+  string sha256_hex = 4;
+  int64 bytes_received = 5;
+}
+
