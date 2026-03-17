@@ -78,6 +78,7 @@ import io.hakaisecurity.beerusframework.composables.PropertiesScreen
 import io.hakaisecurity.beerusframework.composables.ProxyScreen
 import io.hakaisecurity.beerusframework.composables.RootScreen
 import io.hakaisecurity.beerusframework.composables.SandboxScreen
+import io.hakaisecurity.beerusframework.composables.UpdateScreen
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.moduleName
@@ -164,8 +165,8 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
         state = listState,
         contentPadding = PaddingValues(top = 60.dp)
     ) {
-        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Root Manager", "Properties", "Boot Options")
-        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconRoot, iconProperty, restart_alt)
+        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Root Manager", "Properties", "Boot Options", "Update")
+        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconRoot, iconProperty, restart_alt, restart_alt)
 
         itemsIndexed(items) { index, item ->
             Row(
@@ -458,6 +459,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                 "Root Manager" -> RootScreen(modifier, activity)
                 "Properties" -> PropertiesScreen(modifier, activity)
                 "Boot Options" -> BootScreen(modifier)
+                "Update" -> UpdateScreen(modifier, activity)
                 else -> HomeScreen(modifier)
             }
         }
