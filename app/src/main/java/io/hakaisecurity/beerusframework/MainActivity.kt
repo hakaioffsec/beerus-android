@@ -38,7 +38,11 @@ import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showRoo
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showsRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasModule
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasRoot
+import io.hakaisecurity.beerusframework.core.functions.update.UpdateManager
+import io.hakaisecurity.beerusframework.core.models.UpdateState
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +69,7 @@ class MainActivity : ComponentActivity() {
                 color = Color(0xFF1F1F22)
             ) {
                 val context = LocalContext.current
+                val scope = rememberCoroutineScope()
 
                 val mainHandler = Handler(Looper.getMainLooper())
                 LaunchedEffect(Unit) {
@@ -115,6 +120,8 @@ class MainActivity : ComponentActivity() {
                             updateFridaDownloadedVersion(readFridaCurrentVersion(context))
                         }
                     )
+                    
+                    UpdateManager.checkForUpdates(context, showDialogIfAvailable = true)
                 }
 
                 NavigationFunc(context = context, modifier = Modifier)
@@ -123,6 +130,18 @@ class MainActivity : ComponentActivity() {
                     MagikModuleInstallDialog(
                         onDismiss = { dismissRootModuleInstallerDialog() },
                         onConfirm = { confirmRootModuleInstallerDialog(context) }
+                    )
+                }
+                
+                if (UpdateState.showUpdateDialog) {
+                    UpdateAvailableDialog(
+                        onDismiss = { UpdateState.dismissDialog() },
+                        onConfirm = {
+                            UpdateState.dismissDialog()
+                            scope.launch {
+                                UpdateManager.downloadAndInstall(context)
+                            }
+                        }
                     )
                 }
             }
@@ -144,6 +163,30 @@ fun MagikModuleInstallDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Do After", fontFamily = ibmFont)
+            }
+        }
+    )
+}
+
+@Composable
+fun UpdateAvailableDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Update Available") },
+        text = { 
+            Text(
+                text = "A new version (${UpdateState.latestVersion}) is available. Current version: ${UpdateState.currentVersion}. Would you like to update now?",
+                fontSize = 16.sp
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Update", fontFamily = ibmFont)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Later", fontFamily = ibmFont)
             }
         }
     )
