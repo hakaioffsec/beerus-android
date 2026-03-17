@@ -10,6 +10,9 @@ class NavigationState : ViewModel() {
         var animationStart by mutableStateOf(false)
             private set
 
+        var animationStartOnDifferentSelectedItem by mutableStateOf(false)
+            private set
+
         var moduleName by mutableStateOf("Home")
             private set
 
@@ -19,6 +22,10 @@ class NavigationState : ViewModel() {
 
         fun updateanimationStartState(newState: Boolean) {
             animationStart = newState
+        }
+
+        fun updateanimationStartOnDifferentSelectedItemState(newState: Boolean) {
+            animationStartOnDifferentSelectedItem = newState
         }
     }
 }

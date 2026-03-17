@@ -1,6 +1,8 @@
 package io.hakaisecurity.beerusframework
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,37 +14,35 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
-import android.os.Handler
-import android.os.Looper
 import androidx.core.view.WindowCompat
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectKernelSu
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectMagisk
 import io.hakaisecurity.beerusframework.core.functions.Start.Companion.detectRootModuleInstalled
-import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.getAllModules
-import io.hakaisecurity.beerusframework.core.models.RootModulesState
 import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.getFridaVersions
 import io.hakaisecurity.beerusframework.core.functions.frida.FridaSetup.Companion.readFridaCurrentVersion
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.getAllModules
+import io.hakaisecurity.beerusframework.core.functions.update.UpdateManager
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.currentFridaVersionFromList
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.fridaVersions
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.updateFridaDownloadedVersion
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
+import io.hakaisecurity.beerusframework.core.models.RootModulesState
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.dismissRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.showsRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasModule
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.updateHasRoot
-import io.hakaisecurity.beerusframework.core.functions.update.UpdateManager
 import io.hakaisecurity.beerusframework.core.models.UpdateState
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

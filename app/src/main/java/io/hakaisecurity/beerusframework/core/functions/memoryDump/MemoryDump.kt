@@ -2,7 +2,9 @@ package io.hakaisecurity.beerusframework.core.functions.memoryDump
 
 import android.annotation.SuppressLint
 import android.content.Context
+import io.hakaisecurity.beerusframework.core.network.grpc.BeerusGrpcUploader
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
+import io.hakaisecurity.beerusframework.grpc.ArtifactKind
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -16,8 +18,6 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
-import io.hakaisecurity.beerusframework.core.network.grpc.BeerusGrpcUploader
-import io.hakaisecurity.beerusframework.grpc.ArtifactKind
 
 object MemoryDump {
     fun collectionTriagge(context: Context, server:String, isUSB: Boolean, selectionData: String, onComplete: (String) -> Unit) {
