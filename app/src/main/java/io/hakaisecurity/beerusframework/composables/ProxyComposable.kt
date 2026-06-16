@@ -48,11 +48,14 @@ import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.core.functions.bootOptions.bootFunctions.Companion.changeProperties
 import io.hakaisecurity.beerusframework.core.functions.bootOptions.bootFunctions.Companion.getProperties
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.ProxyData
+import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.ProxyMode
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.addProfile
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.deleteProxy
+import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.deselectProfile
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.editProfile
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.getProfiles
 import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.selectProfile
+import io.hakaisecurity.beerusframework.core.functions.proxyProfiles.ProxyProfiles.updateProfileMode
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
@@ -166,15 +169,18 @@ fun ProxyScreen(modifier: Modifier, context: Context) {
                                         if(!animationStart) {
                                             if (selectedProxy == proxy.conString) {
                                                 selectedProxy = null
-                                                selectProfile(context, ":0")
-                                                if (hasModule) changeProperties("proxy", ":0")
+                                                deselectProfile(context)
+                                                if (hasModule) {
+                                                    changeProperties("proxy", ":0")
+                                                    changeProperties("proxyMode", "HTTP")
+                                                }
                                             } else {
                                                 selectedProxy = proxy.conString
-                                                selectProfile(context, proxy.conString)
-                                                if (hasModule) changeProperties(
-                                                    "proxy",
-                                                    proxy.conString
-                                                )
+                                                selectProfile(context, proxy.conString, proxy.mode)
+                                                if (hasModule) {
+                                                    changeProperties("proxy", proxy.conString)
+                                                    changeProperties("proxyMode", proxy.mode.name)
+                                                }
                                             }
                                         }else {
                                             updateanimationStartState(false)
@@ -190,6 +196,25 @@ fun ProxyScreen(modifier: Modifier, context: Context) {
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = ibmFont,
                                 fontSize = 12.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            ProxyModeSelector(
+                                modifier = Modifier,
+                                currentMode = proxy.mode,
+                                onModeChange = { newMode ->
+                                    if (!animationStart) {
+                                        updateProfileMode(context, proxy.name, newMode)
+                                        if (isSelected) {
+                                            selectProfile(context, proxy.conString, newMode)
+                                            if (hasModule) changeProperties("proxyMode", newMode.name)
+                                        }
+                                        refreshProxies()
+                                    } else {
+                                        updateanimationStartState(false)
+                                    }
+                                }
                             )
                         }
 
@@ -408,5 +433,49 @@ fun ToggleProfileButton(
                 .size(dotSize)
                 .background(Color.Red, CircleShape)
         )
+    }
+}
+
+@Composable
+fun ProxyModeSelector(
+    modifier: Modifier = Modifier,
+    currentMode: ProxyMode,
+    onModeChange: (ProxyMode) -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(32.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color(0xFF0A0A0A))
+            .border(1.dp, Color(0xFF333333), RoundedCornerShape(6.dp)),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ProxyMode.entries.forEach { mode ->
+            val isActive = mode == currentMode
+            val bgColor by animateColorAsState(
+                targetValue = if (isActive) Color(0xFFAB0100) else Color.Transparent,
+                label = "modeBg"
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(2.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(bgColor)
+                    .clickable { onModeChange(mode) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (mode == ProxyMode.HTTP) "HTTP Proxy" else "iptables",
+                    color = if (isActive) Color.White else Color(0xFF888888),
+                    fontSize = 11.sp,
+                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                    fontFamily = ibmFont
+                )
+            }
+        }
     }
 }
