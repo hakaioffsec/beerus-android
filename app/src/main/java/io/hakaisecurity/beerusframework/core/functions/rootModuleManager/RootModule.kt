@@ -1,10 +1,10 @@
-package io.hakaisecurity.beerusframework.core.functions.magiskModuleManager
+package io.hakaisecurity.beerusframework.core.functions.rootModuleManager
 
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.showsMagiskDialog
+import io.hakaisecurity.beerusframework.core.models.RootManager.Companion.showsRootDialog
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import java.io.File
 import java.io.FileOutputStream
@@ -12,7 +12,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-class MagiskModule {
+class RootModule {
     companion object {
         fun startModuleManager(context: Context, zipUri: Uri) {
             val zipFile = getFileNameFromUri(context, zipUri)
@@ -31,39 +31,25 @@ class MagiskModule {
                 if (!result.contains("No such file or directory")) {
                     runSuCommand("mkdir /data/adb/modules/${dirDestination}") {
                         runSuCommand("unzip -o $cacheFile -d /data/adb/modules/${dirDestination}") {
-                            showsMagiskDialog()
+                            showsRootDialog()
                         }
                     }
                 }
             }
         }
 
-        fun getAllModules(modulePropsList: MutableList<String>) {
+        fun getAllModules(callback: (List<String>) -> Unit) {
             runSuCommand("find /data/adb/modules/ -type f -name \"module.prop\" -exec ls -l {} \\; | cut -d \" \" -f 8") { result ->
-                result.split("\n").filter { it.isNotBlank() }.let { paths ->
-                    modulePropsList.addAll(paths)
-                }
+                val paths = result.split("\n").filter { it.isNotBlank() }
+                callback(paths)
             }
         }
 
-        fun getStatusModule(modulePath: String, status: String): Boolean {
+        fun getStatusModule(modulePath: String, status: String, callback: (Boolean) -> Unit) {
             val path = modulePath.replace("module.prop", status, ignoreCase = true)
-            var result = false
-
-            val lock = Object()
-
             runSuCommand("ls $path") { output ->
-                result = output.trim() == path
-                synchronized(lock) {
-                    lock.notify()
-                }
+                callback(output.trim() == path)
             }
-
-            synchronized(lock) {
-                lock.wait()
-            }
-
-            return result
         }
 
 

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.protobuf)
 }
 
 android {
@@ -16,7 +17,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
     }
 
     buildTypes {
@@ -29,11 +30,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -85,21 +87,21 @@ val buildNativeFrida by tasks.registering(Exec::class) {
     commandLine = listOf(ndkBuild.absolutePath)
 }
 
-val zipFolderTaskMagisk = tasks.register("zipModule") {
-    val inputMagiskDir = layout.projectDirectory.dir("../magiskModule")
-    val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
+val zipFolderTaskRoot = tasks.register("zipModule") {
+    val inputRootDir = layout.projectDirectory.dir("../rootModule")
+    val outputRootZip = layout.buildDirectory.file("generated/beerusRootModule.zip")
 
-    inputs.dir(inputMagiskDir)
-    outputs.file(outputMagiskZip)
+    inputs.dir(inputRootDir)
+    outputs.file(outputRootZip)
 
     doLast {
-        val inputMagisk: File = inputMagiskDir.asFile
-        val outputMagisk: File = outputMagiskZip.get().asFile
-        outputMagisk.parentFile.mkdirs()
+        val inputRoot: File = inputRootDir.asFile
+        val outputRoot: File = outputRootZip.get().asFile
+        outputRoot.parentFile.mkdirs()
 
-        ZipOutputStream(outputMagisk.outputStream()).use { zip ->
-            inputMagisk.walkTopDown().filter { it.isFile }.forEach { file ->
-                val entryName = file.relativeTo(inputMagisk).invariantSeparatorsPath
+        ZipOutputStream(outputRoot.outputStream()).use { zip ->
+            inputRoot.walkTopDown().filter { it.isFile }.forEach { file ->
+                val entryName = file.relativeTo(inputRoot).invariantSeparatorsPath
                 zip.putNextEntry(ZipEntry(entryName))
                 file.inputStream().copyTo(zip)
                 zip.closeEntry()
@@ -169,13 +171,13 @@ android.applicationVariants.all {
     val variantName = variant.name.replaceFirstChar(Char::uppercaseChar)
 
     val copyZipsToAssets = tasks.register<Copy>("copyZipsToAssets$variantName") {
-        dependsOn(zipFolderTaskMagisk, zipFolderTaskFrida, zipFolderTaskDbAgent)
+        dependsOn(zipFolderTaskRoot, zipFolderTaskFrida, zipFolderTaskDbAgent)
 
-        val outputMagiskZip = layout.buildDirectory.file("generated/beerusMagiskModule.zip")
+        val outputRootZip = layout.buildDirectory.file("generated/beerusRootModule.zip")
         val outputFridaZip = layout.buildDirectory.file("generated/fridaCore.zip")
         val outputDbAgentZip = layout.buildDirectory.file("generated/dbAgent.zip")
-        from(outputMagiskZip) {
-            rename { "beerusMagiskModule.zip" }
+        from(outputRootZip) {
+            rename { "beerusRootModule.zip" }
         }
 
         from(outputFridaZip) {
@@ -195,9 +197,20 @@ android.applicationVariants.all {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    implementation(platform("io.github.Rosemoe.sora-editor:bom:0.23.6"))
+    implementation("io.github.Rosemoe.sora-editor:editor")
+    implementation("io.github.Rosemoe.sora-editor:language-textmate")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.grpc.okhttp)
+    implementation(libs.grpc.protobuf.lite)
+    implementation(libs.grpc.stub)
+    implementation(libs.protobuf.javalite)
+    implementation(libs.javax.annotation.api)
     implementation("org.tukaani:xz:1.9")
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.github.skydoves:landscapist-glide:2.3.1")
     implementation("net.dongliu:apk-parser:2.6.10")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -212,4 +225,29 @@ dependencies {
     implementation(libs.androidx.ui.text.google.fonts)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     debugImplementation(libs.androidx.ui.tooling)
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.29.2"
+    }
+    plugins {
+        create("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.74.0"
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+            }
+            task.plugins {
+                create("grpc") {
+                    option("lite")
+                }
+            }
+        }
+    }
 }

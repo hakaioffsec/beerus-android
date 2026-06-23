@@ -1,6 +1,8 @@
 package io.hakaisecurity.beerusframework.composables
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
@@ -36,7 +38,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,38 +53,52 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.R
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.getAllModules
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.getStatusModule
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.moduleOps
-import io.hakaisecurity.beerusframework.core.functions.magiskModuleManager.MagiskModule.Companion.startModuleManager
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.confirmMagiskDialog
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.dismissMagiskDialog
-import io.hakaisecurity.beerusframework.core.models.MagiskManager.Companion.showMagiskDialog
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.getAllModules
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.getStatusModule
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.moduleOps
+import io.hakaisecurity.beerusframework.core.functions.rootModuleManager.RootModule.Companion.startModuleManager
+import io.hakaisecurity.beerusframework.core.models.RootManager.Companion.confirmRootDialog
+import io.hakaisecurity.beerusframework.core.models.RootManager.Companion.dismissRootDialog
+import io.hakaisecurity.beerusframework.core.models.RootManager.Companion.showRootDialog
+import io.hakaisecurity.beerusframework.core.models.RootModulesState
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import io.hakaisecurity.beerusframework.ui.theme.RefreshCcwDot
 import io.hakaisecurity.beerusframework.ui.theme.Trash
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 
+private val mainHandler = Handler(Looper.getMainLooper())
+
 @Composable
-fun MagiskScreen(modifier: Modifier, context: Context) {
+fun RootScreen(modifier: Modifier, context: Context) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dec()
     val screenHeight = configuration.screenHeightDp.dec() * .15f
 
-    val modulePropsList = remember { mutableStateListOf<String>() }
+    val modulePropsList = RootModulesState.rootModulePaths
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {startModuleManager(context, it)}
+        uri?.let { startModuleManager(context, it) }
     }
 
     LaunchedEffect(Unit) {
-        getAllModules(modulePropsList)
+        if (modulePropsList.isEmpty()) {
+            getAllModules { paths ->
+                mainHandler.post { RootModulesState.setModulePaths(paths) }
+            }
+        }
     }
 
-    if (showMagiskDialog) {
+    if (showRootDialog) {
         MagikRebootDialog(
-            onDismiss = { dismissMagiskDialog(); modulePropsList.clear(); getAllModules(modulePropsList) },
-            onConfirm = { confirmMagiskDialog() }
+            onDismiss = {
+                dismissRootDialog()
+                getAllModules { paths ->
+                    mainHandler.post {
+                        RootModulesState.setModulePaths(paths)
+                    }
+                }
+            },
+            onConfirm = { confirmRootDialog() }
         )
     }
 
@@ -96,8 +111,8 @@ fun MagiskScreen(modifier: Modifier, context: Context) {
         Spacer(modifier = modifier.height(screenHeight.dp))
 
         Image(
-            painter = painterResource(id = R.drawable.magisklogo),
-            contentDescription = "Magisk Logo",
+            painter = painterResource(id = R.drawable.root),
+            contentDescription = "Root Logo",
             modifier = modifier.size((screenWidth / 2).dp)
         )
 
@@ -133,16 +148,31 @@ fun MagiskScreen(modifier: Modifier, context: Context) {
                 var moduleAuthor by remember { mutableStateOf("") }
                 var moduleDescription by remember { mutableStateOf("") }
 
-                var moduleStatus by remember { mutableStateOf(getStatusModule(modulePath, "disable")) }
-                var deleteModuleStatus by remember { mutableStateOf(getStatusModule(modulePath, "remove")) }
+                var moduleStatus by remember(modulePath) { mutableStateOf(false) }
+                var deleteModuleStatus by remember(modulePath) { mutableStateOf(false) }
+
+                LaunchedEffect(modulePath) {
+                    getStatusModule(modulePath, "disable") { status ->
+                        mainHandler.post { moduleStatus = status }
+                    }
+                    getStatusModule(modulePath, "remove") { status ->
+                        mainHandler.post { deleteModuleStatus = status }
+                    }
+                }
 
                 LaunchedEffect(modulePath) {
                     runSuCommand("cat $modulePath") { result ->
                         val lines = result.lines()
-                        moduleName = lines.getOrNull(1)?.split("name=")?.get(1) ?: "Unknown Name"
-                        moduleVersion = lines.getOrNull(2)?.split("version=")?.get(1) ?: "Unknown Version"
-                        moduleAuthor = lines.getOrNull(4)?.split("author=")?.get(1) ?: "Unknown Author"
-                        moduleDescription = lines.getOrNull(5)?.split("description=")?.get(1) ?: "No Description"
+                        val name = lines.getOrNull(1)?.split("name=")?.get(1) ?: "Unknown Name"
+                        val version = lines.getOrNull(2)?.split("version=")?.get(1) ?: "Unknown Version"
+                        val author = lines.getOrNull(4)?.split("author=")?.get(1) ?: "Unknown Author"
+                        val description = lines.getOrNull(5)?.split("description=")?.get(1) ?: "No Description"
+                        mainHandler.post {
+                            moduleName = name
+                            moduleVersion = version
+                            moduleAuthor = author
+                            moduleDescription = description
+                        }
                     }
                 }
 

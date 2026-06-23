@@ -50,9 +50,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.core.functions.Manifest.Manifest
-import io.hakaisecurity.beerusframework.core.utils.ApplicationInformation
 import io.hakaisecurity.beerusframework.core.models.Application
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
+import io.hakaisecurity.beerusframework.core.utils.ApplicationInformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

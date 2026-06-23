@@ -5,11 +5,11 @@ import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuC
 class bootFunctions {
     companion object{
         fun changeProperties(propertyName: String, propertyValue: Any){
-            runSuCommand("sed -i 's/^$propertyName=.*/$propertyName=$propertyValue/' /data/adb/modules/beerusMagiskModule/status"){}
+            runSuCommand("sed -i 's/^$propertyName=.*/$propertyName=$propertyValue/' /data/adb/modules/beerusRootModule/status"){}
         }
 
         fun getProperties(onResult: (Map<String, String>) -> Unit) {
-            runSuCommand("cat /data/adb/modules/beerusMagiskModule/status") { output ->
+            runSuCommand("cat /data/adb/modules/beerusRootModule/status") { output ->
                 val statusMap = output
                     .split("\n")
                     .mapNotNull { line ->

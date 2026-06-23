@@ -14,3 +14,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+/.idea/markdown.xml
+/app/release
+/app/debug
+/app/build

@@ -1,12 +1,8 @@
 package io.hakaisecurity.beerusframework.core.functions.Manifest
 
-import android.app.Activity
 import android.util.Log
-import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.PropertyData
-import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import net.dongliu.apk.parser.ApkFile
 import java.io.File
-import java.util.Dictionary
 
 class Manifest {
 

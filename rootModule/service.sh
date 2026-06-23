@@ -29,4 +29,15 @@ dbAgent /data/adb/magisk.db "UPDATE settings SET value='0' WHERE key='mnt_ns';"
 sqlite3 /data/adb/magisk.db "UPDATE settings SET value='0' WHERE key='mnt_ns';"
 
 proxyProp=$(grep '^proxy=' "$STATUS_FILE" | cut -d'=' -f2)
-settings put global http_proxy "$proxyProp"
+proxyModeProp=$(grep '^proxyMode=' "$STATUS_FILE" | cut -d'=' -f2)
+
+if [ "$proxyModeProp" = "IPTABLES" ] && [ ! -z "$proxyProp" ] && [ "$proxyProp" != ":0" ]; then
+    settings put global http_proxy ":0"
+    iptables -t nat -F
+    iptables -t nat -A OUTPUT -p tcp --dport 80 -j DNAT --to-destination "$proxyProp"
+    iptables -t nat -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination "$proxyProp"
+    iptables -t nat -A POSTROUTING -p tcp --dport 443 -j MASQUERADE
+    iptables -t nat -A POSTROUTING -p tcp --dport 80 -j MASQUERADE
+else
+    settings put global http_proxy "$proxyProp"
+fi

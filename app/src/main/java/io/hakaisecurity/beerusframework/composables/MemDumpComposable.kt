@@ -26,7 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -56,7 +55,6 @@ import io.hakaisecurity.beerusframework.core.functions.memoryDump.ProcessInforma
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.models.Process
-import io.hakaisecurity.beerusframework.ui.theme.iconWarning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,10 +76,12 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
     val sheetState = rememberModalBottomSheetState()
 
     var regexIsValid by remember { mutableStateOf(true) }
-    val addressRegex = Regex("^(https?://)?((localhost)|(\\d{1,3}\\.){3}\\d{1,3}|([\\dA-Za-z-]+\\.)+[A-Za-z]{2,})(:(?:[1-9]\\d{0,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5]))?(\\/([\\w %&,.~\\-]+)?)*\\/?\$")
+    val addressRegex = Regex("^((https?://)|(grpc://))?((localhost)|(\\d{1,3}\\.){3}\\d{1,3}|([\\dA-Za-z-]+\\.)+[A-Za-z]{2,})(:(?:[1-9]\\d{0,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5]))?(\\/([\\w %&,.~\\-]+)?)*\\/?\$")
 
     fun getServer(): String {
-        return if (server.startsWith("http") || server.startsWith("https")) {
+        return if (server.startsWith("grpc://")) {
+            server
+        } else if (server.startsWith("http") || server.startsWith("https")) {
             server
         } else {
             "http://$server"
@@ -322,27 +322,7 @@ fun MemDumpScreen(modifier: Modifier = Modifier) {
                     )
                 )
             }
-
-            Row (
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp)
-            ){
-                Icon(
-                    imageVector = iconWarning,
-                    contentDescription = "Icon",
-                    tint = Color.Yellow,
-                    modifier = Modifier.size(35.dp)
-                )
-
-                Text(
-                    text = "Warning: This can take sometime around 20 to 30 minutes... Please wait to stop loading",
-                    color = Color.Yellow,
-                    modifier = modifier.padding(start = 6.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
+            
             Button(onClick = {
                 if (!animationStart) {
                     selectedApp?.let { app ->

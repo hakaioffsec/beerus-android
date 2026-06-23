@@ -1,11 +1,10 @@
 package io.hakaisecurity.beerusframework.core.functions.Properties
 
-import android.util.Log
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
 import java.io.IOException
 
 object Properties {
-    var systemPropPath = "/data/adb/modules/beerusMagiskModule/system.prop"
+    var systemPropPath = "/data/adb/modules/beerusRootModule/system.prop"
 
     data class PropertyData(
         val name: String,

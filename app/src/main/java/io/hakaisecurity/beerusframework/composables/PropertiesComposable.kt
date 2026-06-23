@@ -39,10 +39,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.removeProperty
 import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.addProperty
 import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.editProperty
 import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.listProperties
+import io.hakaisecurity.beerusframework.core.functions.Properties.Properties.removeProperty
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand

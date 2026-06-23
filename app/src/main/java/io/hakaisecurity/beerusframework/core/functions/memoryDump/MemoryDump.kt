@@ -2,7 +2,9 @@ package io.hakaisecurity.beerusframework.core.functions.memoryDump
 
 import android.annotation.SuppressLint
 import android.content.Context
+import io.hakaisecurity.beerusframework.core.network.grpc.BeerusGrpcUploader
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
+import io.hakaisecurity.beerusframework.grpc.ArtifactKind
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -30,52 +32,90 @@ object MemoryDump {
     @SuppressLint("SimpleDateFormat")
     private fun quickDump(context: Context, server: String, isUSB: Boolean, PID: String, onComplete: (String) -> Unit) {
         runSuCommand("""
-            echo -e "==== maps ====" && cat /proc/$PID/maps && \
-            echo -e "\n==== stack ====" && cat /proc/$PID/stack && \
-            echo -e "\n==== .so loaded ====" && cat /proc/$PID/maps | grep -oE '/[^ ]+\.so' | sort -u && \
-            echo -e "\n==== envs ====" && cat /proc/$PID/environ
+            echo "==== maps ====" && cat /proc/$PID/maps && \
+            echo "\n==== stack ====" && cat /proc/$PID/stack && \
+            echo "\n==== .so loaded ====" && cat /proc/$PID/maps | grep -oE '/[^ ]+\.so' | sort -u && \
+            echo "\n==== envs ====" && tr '\0' '\n' < /proc/$PID/environ
         """.trimIndent()) { output ->
             runSuCommand("cat /proc/$PID/cmdline") { processName ->
                 val safeProcessName = processName.trim()
                     .replace(Regex("[^a-zA-Z0-9._-]+"), "_")
-                    .removePrefix("_")
-                    .removeSuffix("_")
+                    .trim('_')
+
                 val date = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Date())
-                val dir = File(context.filesDir, "dumps").apply { mkdirs() }
-                val file = File(dir, "$date-$safeProcessName-quick-dump.txt")
-                file.writeText(output)
+                val baseDir = File(context.filesDir, "dumps").apply { mkdirs() }
+
+                val quickFile = File(baseDir, "$date-$safeProcessName-quick-dump.txt")
+                quickFile.writeText(output)
 
                 val pid = PID.trim()
-                val stringDumpDirName = File(dir, "$date-$safeProcessName-string-dump")
-                val tarFile = File(dir, "$date-$safeProcessName.tar.gz")
+                val stringDumpDir = File(baseDir, "$date-$safeProcessName-string-dump")
+                val tarFile = File(baseDir, "$date-$safeProcessName.tar.gz")
+
                 runSuCommand("""
-                    mkdir -p ${stringDumpDirName.absolutePath} && \
-                    while IFS= read -r line; do \
-                        RANGE=$(echo "${'$'}line" | awk '{print ${'$'}1}'); \
-                        PERMS=$(echo "${'$'}line" | awk '{print ${'$'}2}'); \
-                        if [[ "${'$'}PERMS" == *"r"* ]]; then \
-                            START_HEX=0x${'$'}{RANGE%-*}; \
-                            END_HEX=0x${'$'}{RANGE#*-}; \
-                            START=$(printf "%u" ${'$'}START_HEX); \
-                            END=$(printf "%u" ${'$'}END_HEX); \
-                            SIZE=${'$'}((END - START)); \
-                            FILE="${stringDumpDirName.absolutePath}/${'$'}RANGE"; \
-                            dd if=/proc/$pid/mem bs=1 skip=${'$'}START count=${'$'}SIZE status=none 2>/dev/null | strings > "${'$'}FILE"; \
-                        fi; \
-                    done < /proc/$pid/maps && \
-                    cd ${dir.absolutePath} && \
-                    tar -czf ${tarFile.absolutePath} $date-$safeProcessName-quick-dump.txt $date-$safeProcessName-string-dump && \
-                    rm -rf ${file.absolutePath} ${stringDumpDirName.absolutePath}
+                    PAGE=4096
+                    MAX_SIZE=$((20 * 1024 * 1024))
+    
+                    mkdir -p "${stringDumpDir.absolutePath}"
+    
+                    grep -E "rw.*(heap|anon|\.dex|\.odex|\.oat)" /proc/$pid/maps | \
+                    while read -r line; do
+                        RANGE=$(echo "${'$'}line" | awk '{print ${'$'}1}')
+    
+                        START_HEX=0x${'$'}{RANGE%-*}
+                        END_HEX=0x${'$'}{RANGE#*-}
+    
+                        START=$(printf "%u" "${'$'}START_HEX")
+                        END=$(printf "%u" "${'$'}END_HEX")
+                        SIZE=$((END - START))
+    
+                        [ "${'$'}SIZE" -le 0 ] && continue
+                        [ "${'$'}SIZE" -gt "${'$'}MAX_SIZE" ] && continue
+    
+                        SKIP=$((START / PAGE))
+                        COUNT=$((SIZE / PAGE))
+    
+                        [ "${'$'}COUNT" -le 0 ] && continue
+    
+                        OUT_FILE="${stringDumpDir.absolutePath}/${'$'}RANGE"
+    
+                        dd if=/proc/$pid/mem \
+                           bs=${'$'}PAGE \
+                           skip=${'$'}SKIP \
+                           count=${'$'}COUNT \
+                           status=none 2>/dev/null | strings > "${'$'}OUT_FILE"
+                    done
+    
+                    cd "${baseDir.absolutePath}" && \
+                    tar -czf "${tarFile.absolutePath}" \
+                        "${quickFile.name}" \
+                        "${stringDumpDir.name}" && \
+                    rm -rf "${quickFile.absolutePath}" "${stringDumpDir.absolutePath}"
                 """.trimIndent()) {
                     if (!isUSB) {
-                        sendFile(tarFile.absolutePath, server) { R ->
-                            runSuCommand("rm -rf ${tarFile.absolutePath}") {
-                                onComplete("OK")
+                        if (server.trim().startsWith("grpc://")) {
+                            BeerusGrpcUploader.uploadTarGz(
+                                server = server,
+                                filePath = tarFile.absolutePath,
+                                kind = ArtifactKind.MEMORY_DUMP_TAR_GZ,
+                                packageName = null,
+                                deviceId = null,
+                                extractTarGz = true
+                            ) { result ->
+                                runSuCommand("rm -f ${tarFile.absolutePath}") {
+                                    onComplete(if (result != null && result.success) "OK" else "FAIL")
+                                }
+                            }
+                        } else {
+                            sendFile(tarFile.absolutePath, server) {
+                                runSuCommand("rm -f ${tarFile.absolutePath}") {
+                                    onComplete("OK")
+                                }
                             }
                         }
                     } else {
-                        runSuCommand("cp -r ${tarFile.absolutePath} /data/local/tmp") {
-                            runSuCommand("rm -rf ${tarFile.absolutePath}") {
+                        runSuCommand("cp ${tarFile.absolutePath} /data/local/tmp") {
+                            runSuCommand("rm -f ${tarFile.absolutePath}") {
                                 onComplete("OK")
                             }
                         }
@@ -117,6 +157,10 @@ object MemoryDump {
             onComplete(true)
             return
         } else {
+            if (server.trim().startsWith("grpc://")) {
+                BeerusGrpcUploader.check(server) { ok -> onComplete(ok) }
+                return
+            }
             val request = Request.Builder().url("$server/check").get().build()
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {

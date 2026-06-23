@@ -3,26 +3,32 @@ package io.hakaisecurity.beerusframework
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -42,13 +48,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -62,32 +67,37 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
+import com.skydoves.landscapist.ImageOptions
+import com.skydoves.landscapist.glide.GlideImage
 import io.hakaisecurity.beerusframework.composables.ADBScreen
 import io.hakaisecurity.beerusframework.composables.BootScreen
 import io.hakaisecurity.beerusframework.composables.FridaScreen
+import io.hakaisecurity.beerusframework.composables.FridaScriptsScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
-import io.hakaisecurity.beerusframework.composables.MagiskScreen
-import io.hakaisecurity.beerusframework.composables.MemDumpScreen
 import io.hakaisecurity.beerusframework.composables.ManifestScreen
+import io.hakaisecurity.beerusframework.composables.MemDumpScreen
 import io.hakaisecurity.beerusframework.composables.PropertiesScreen
 import io.hakaisecurity.beerusframework.composables.ProxyScreen
+import io.hakaisecurity.beerusframework.composables.RootScreen
 import io.hakaisecurity.beerusframework.composables.SandboxScreen
+import io.hakaisecurity.beerusframework.composables.UpdateScreen
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
+import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStartOnDifferentSelectedItem
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.moduleName
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateNavigationState
+import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartOnDifferentSelectedItemState
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasMagisk
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmRootModuleInstallerDialog
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
+import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasRoot
 import io.hakaisecurity.beerusframework.ui.theme.Home
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 import io.hakaisecurity.beerusframework.ui.theme.iconMemory
 import io.hakaisecurity.beerusframework.ui.theme.iconPackage
 import io.hakaisecurity.beerusframework.ui.theme.iconProxy
 import io.hakaisecurity.beerusframework.ui.theme.restart_alt
-import io.hakaisecurity.beerusframework.ui.theme.FiletypeXml
-import androidx.core.net.toUri
-import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirmMagiskModuleInstallerDialog
 
 @SuppressLint("NewApi")
 @Composable
@@ -95,17 +105,36 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dec() * 0.55f
 
-    var noMagisk by remember { mutableStateOf(false) }
+    var noRoot by remember { mutableStateOf(false) }
     var noModule by remember { mutableStateOf(false) }
 
     var selectedItem by remember { mutableStateOf("Home") }
 
     val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
-    val iconMagisk = ImageVector.vectorResource(id = R.drawable.magiskicon)
+    val iconCode = ImageVector.vectorResource(id = R.drawable.ic_code)
+    val iconRoot = ImageVector.vectorResource(id = R.drawable.rooticon)
     val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
     val iconProperty = ImageVector.vectorResource(id = R.drawable.propertyicon)
 
     val listState = rememberLazyListState()
+    val density = LocalDensity.current
+    val items = remember {
+        listOf("Home", "Frida Setup", "Frida Scripts", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Root Manager", "Properties", "Boot Options", "Update")
+    }
+    val selectedIndex = items.indexOf(selectedItem).coerceIn(0, items.lastIndex)
+    val itemHeightPx = with(density) { 84.dp.toPx() }
+    val contentTopPx = with(density) { 60.dp.toPx() }
+    val highlightHeightPx = with(density) { 64.dp.toPx() }
+    val highlightLeftPx = with(density) { 20.dp.toPx() }
+    val highlightWidthPx = with(density) { (screenWidth + 10).dp.toPx() }
+    val whiteCircleCenterXPx = with(density) { 50.dp.toPx() }
+    val whiteCircleRadiusPx = with(density) { 30.dp.toPx() }
+    val targetOffsetInContent = selectedIndex * itemHeightPx
+    val animatedOffsetInContent by animateFloatAsState(
+        targetValue = targetOffsetInContent,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "highlightOffset"
+    )
     var isScrolling by remember { mutableStateOf(false) }
     val scrollAlpha by animateFloatAsState(
         targetValue = if (isScrolling) 1f else 0f,
@@ -114,11 +143,8 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     )
 
     LaunchedEffect(listState.isScrollInProgress) {
-        if (listState.isScrollInProgress) {
-            isScrolling = true
-        } else {
+        if (!listState.isScrollInProgress) {
             kotlinx.coroutines.delay(1000)
-            isScrolling = false
         }
     }
 
@@ -128,10 +154,26 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
             .padding(start = 3.dp, end = 0.dp, bottom = 0.dp)
             .zIndex(0f)
             .drawWithContent {
-                drawContent()
-
                 val layoutInfo = listState.layoutInfo
                 val totalItems = layoutInfo.totalItemsCount
+                val scrollOffsetPx = listState.firstVisibleItemIndex * itemHeightPx + listState.firstVisibleItemScrollOffset
+                val highlightY = contentTopPx + animatedOffsetInContent - scrollOffsetPx
+                val redHighlightTopY = highlightY + (itemHeightPx - highlightHeightPx) / 2f
+                val cornerRadiusPx = highlightHeightPx / 2f
+                drawRoundRect(
+                    color = Color.Red,
+                    topLeft = Offset(highlightLeftPx, redHighlightTopY),
+                    size = Size(highlightWidthPx, highlightHeightPx),
+                    cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx)
+                )
+                val whiteCircleCenterY = highlightY + itemHeightPx / 2f
+                drawCircle(
+                    color = Color.White,
+                    radius = whiteCircleRadiusPx,
+                    center = Offset(whiteCircleCenterXPx, whiteCircleCenterY)
+                )
+                drawContent()
+
                 val visibleItems = layoutInfo.visibleItemsInfo
                 val viewportHeight = size.height
 
@@ -163,8 +205,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
         state = listState,
         contentPadding = PaddingValues(top = 60.dp)
     ) {
-        val items = mutableListOf("Home", "Frida Setup", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Magisk Manager", "Properties", "Boot Options")
-        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconMagisk, iconProperty, restart_alt)
+        val icons = mutableListOf(Home, iconFrida, iconCode, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconRoot, iconProperty, restart_alt, restart_alt)
 
         itemsIndexed(items) { index, item ->
             Row(
@@ -179,29 +220,24 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
             ) {
                 Button(
                     onClick = {
-                        if (!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")){
-                            noMagisk = true
+                        if (!hasRoot && (item == "Root Manager" || item == "Boot Options" || item == "Properties")) {
+                            noRoot = true
+                        } else if (!hasModule && (item == "Boot Options" || item == "Properties")) {
+                            noModule = true
                         } else {
-                            if (!hasModule && (item == "Boot Options" || item == "Properties")) {
-                                noModule = true
-                            } else {
+                            val isDifferent = item != selectedItem
+                            updateanimationStartOnDifferentSelectedItemState(isDifferent)
+
+                            if (isDifferent) {
                                 updateNavigationState(item)
-                                updateanimationStartState(false)
                                 selectedItem = item
                             }
+
+                            updateanimationStartState(false)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor =
-                            if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && item == "Boot Options")){
-                                Color.Transparent
-                            } else {
-                                if (selectedItem == item) {
-                                    Color.Red
-                                } else {
-                                    Color.Transparent
-                                }
-                            }
+                        containerColor = Color.Transparent
                     ),
                     modifier = Modifier
                         .padding(12.dp)
@@ -213,27 +249,30 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val iconTintTarget = when {
+                            (!hasRoot && (item == "Root Manager" || item == "Boot Options")) || (!hasModule && (item == "Boot Options" || item == "Properties")) -> Color(0xFF858585)
+                            selectedItem == item -> Color.Red
+                            else -> Color.White
+                        }
+                        val iconTint by animateColorAsState(
+                            targetValue = iconTintTarget,
+                            animationSpec = tween(durationMillis = 400, easing = LinearOutSlowInEasing),
+                            label = "iconTint"
+                        )
+
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .size(60.dp)
                                 .clip(CircleShape)
-                                .background(if (selectedItem == item) Color.White else Color.Transparent)
+                                .background(Color.Transparent)
                                 .padding(16.dp)
                                 .zIndex(10f)
                         ) {
                             Icon(
                                 imageVector = icons[index],
                                 contentDescription = "Icon",
-                                tint = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) {
-                                    Color(0xFF858585)
-                                } else {
-                                    if (selectedItem == item) {
-                                        Color.Red
-                                    } else {
-                                        Color.White
-                                    }
-                                },
+                                tint = iconTint,
                                 modifier = Modifier.size(42.dp)
                             )
                         }
@@ -243,7 +282,8 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
                             modifier = Modifier.padding(8.dp, 0.dp, 0.dp, 0.dp),
                             textAlign = TextAlign.Right,
                             fontSize = 14.sp,
-                            color = if ((!hasMagisk && (item == "Magisk Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) Color(0xFF858585) else Color.White,
+                            fontWeight = if(selectedItem == item) FontWeight.Bold else FontWeight.Normal,
+                            color = if ((!hasRoot && (item == "Root Manager" || item == "Boot Options" || item == "Properties")) || (!hasModule && (item == "Boot Options" || item == "Properties"))) Color(0xFF858585) else Color.White,
                             fontFamily = ibmFont
                         )
                     }
@@ -252,25 +292,36 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
         }
     }
 
-    if (noMagisk) {
+    if (noRoot) {
         AlertDialog(
-            onDismissRequest = { noMagisk = false },
+            onDismissRequest = { noRoot = false },
             title = { Text("Note") },
-            text = { Text(text = "Hey, if you want to use this feature you may install Magisk!", fontSize = 18.sp) },
+            text = {
+                Text(
+                    text = "Hey, if you want to use this feature you may install Magisk or KernelSU!",
+                    fontSize = 18.sp
+                )
+            },
             confirmButton = {
                 Button(onClick = {
-                    noMagisk = false
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                        data = "https://topjohnwu.github.io/Magisk/".toUri()
-                    }
-                    context.startActivity(intent)
-                }) {
-                    Text("OK")
-                }
+                    noRoot = false
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, "https://topjohnwu.github.io/Magisk/".toUri())
+                    )
+                }) { Text("Magisk") }
             },
             dismissButton = {
-                TextButton(onClick = { noMagisk = false }) {
-                    Text("Do After", fontFamily = ibmFont)
+                Row {
+                    TextButton(onClick = {
+                        noRoot = false
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, "https://kernelsu.org/".toUri())
+                        )
+                    }) { Text("KernelSU") }
+
+                    TextButton(onClick = { noRoot = false }) {
+                        Text("Dismiss", fontFamily = ibmFont)
+                    }
                 }
             }
         )
@@ -284,7 +335,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
             confirmButton = {
                 Button(onClick = {
                     noModule = false
-                    confirmMagiskModuleInstallerDialog(context)
+                    confirmRootModuleInstallerDialog(context)
                 }) {
                     Text("Install")
                 }
@@ -298,6 +349,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("NewApi")
 @Composable
 fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
@@ -312,41 +364,32 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
 
     val transitionMenu by animateFloatAsState(
         targetValue = if (animationStart) 0f else -configuration.screenWidthDp.dp.value * 2,
-        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 500, easing = LinearOutSlowInEasing, delayMillis = if(!animationStartOnDifferentSelectedItem) 0 else 250),
         label = "transitionMenuAnimation"
     )
 
     val transition by animateFloatAsState(
         targetValue = if (animationStart) screenWidth else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        animationSpec = tween(durationMillis = 500, easing = LinearOutSlowInEasing, delayMillis = if(!animationStartOnDifferentSelectedItem) 0 else 250),
         label = "transitionAnimation"
     )
 
     val rotation by animateFloatAsState(
         targetValue = if (animationStart) -20f else 0f,
-        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 500, easing = LinearOutSlowInEasing, delayMillis = if(!animationStartOnDifferentSelectedItem) 0 else 250),
         label = "rotationAnimation"
     )
 
     val scale by animateFloatAsState(
         targetValue = if (animationStart) 0.85f else 1f,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = tween(durationMillis = 500, easing = LinearOutSlowInEasing, delayMillis = if(!animationStartOnDifferentSelectedItem) 0 else 250),
         label = "scaleAnimation"
     )
 
     val borderRadius by animateFloatAsState(
         targetValue = if (animationStart) 16f else 0f,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = tween(durationMillis = 500, easing = LinearOutSlowInEasing, delayMillis = if(!animationStartOnDifferentSelectedItem) 0 else 250),
         label = "borderRadiusAnimation"
-    )
-
-    val transitionColor = animateColorAsState(
-        targetValue = Color.Red,
-        animationSpec = tween(durationMillis = 500),
-        label = "colorAnimation"
     )
 
     BaseNavigationComponent(context, modifier.graphicsLayer{
@@ -378,11 +421,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
                 style = Stroke(width = 4.dp.toPx())
             )
         }
-        .paint(
-            painterResource(id = R.drawable.cyberpunklines_bg),
-            contentScale = ContentScale.FillBounds,
-            colorFilter = ColorFilter.tint(transitionColor.value)
-        )
+        .clipToBounds()
         .clickable(
             indication = null,
             interactionSource = remember { MutableInteractionSource() }
@@ -392,9 +431,50 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
             }
         }
     ) {
+        if (moduleName != "Home") {
+            GlideImage(
+                imageModel = { R.drawable.cyberpunklines_bg },
+                modifier = Modifier.fillMaxSize(),
+                imageOptions = ImageOptions(
+                    contentScale = ContentScale.FillBounds
+                )
+            )
+        } else {
+            val imageWidth = (configuration.screenWidthDp * 0.9f).dp
+            val imageHeight = (imageWidth * (250f / 200f))
+
+            Image(
+                painter = painterResource(id = R.drawable.ray),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(width = imageWidth * 0.9f, height = imageHeight)
+                    .align(Alignment.TopStart)
+                    .offset(x = (-65).dp, y = (-imageHeight / 4))
+                    .graphicsLayer {
+                        rotationZ = 180f
+                        rotationX = 180f
+                    }
+                    .zIndex(-1f)
+            )
+
+            Image(
+                painter = painterResource(id = R.drawable.ray),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(width = imageWidth * 0.9f, height = imageHeight)
+                    .align(Alignment.TopEnd)
+                    .offset(x = (65).dp, y = (-imageHeight / 33))
+                    .graphicsLayer {
+                        rotationX = 180f
+                    }
+                    .zIndex(-1f)
+            )
+        }
+
         Box(modifier = modifier
             .fillMaxSize()
-            .padding(top = 30.dp, start = 30.dp)) {
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(top = 10.dp, start = 30.dp)) {
             Icon(imageVector = if (!animationStart) iconMenu else iconClose,
                 contentDescription = "Icon",
                 tint = Color.White,
@@ -411,14 +491,15 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
 
         Box(modifier = modifier
             .fillMaxSize()
-            .padding(top = 30.dp)) {
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(top = 10.dp)) {
             Row(
                 modifier = modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = moduleName,
+                    text = if (moduleName != "Home") moduleName else "",
                     fontFamily = ibmFont,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -430,18 +511,21 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
         ) {
             when (moduleName) {
                 "Home" -> HomeScreen(modifier)
                 "Frida Setup" -> FridaScreen(modifier, activity)
+                "Frida Scripts" -> FridaScriptsScreen(modifier, activity)
                 "Sandbox Exf/" -> SandboxScreen(modifier)
                 "Memory Dump" -> MemDumpScreen(modifier)
                 "Proxy Profiles" -> ProxyScreen(modifier, activity)
                 "Manifest" -> ManifestScreen(modifier)
                 "ADB O/ Network" -> ADBScreen(modifier, activity)
-                "Magisk Manager" -> MagiskScreen(modifier, activity)
+                "Root Manager" -> RootScreen(modifier, activity)
                 "Properties" -> PropertiesScreen(modifier, activity)
                 "Boot Options" -> BootScreen(modifier)
+                "Update" -> UpdateScreen(modifier, activity)
                 else -> HomeScreen(modifier)
             }
         }
