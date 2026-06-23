@@ -26,7 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -56,7 +55,6 @@ import io.hakaisecurity.beerusframework.core.functions.memoryDump.ProcessInforma
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
 import io.hakaisecurity.beerusframework.core.models.Process
-import io.hakaisecurity.beerusframework.ui.theme.iconWarning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

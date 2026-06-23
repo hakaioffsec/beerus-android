@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -56,11 +55,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.hakaisecurity.beerusframework.R
-import io.hakaisecurity.beerusframework.core.utils.ApplicationInformation
 import io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration.SandboxExfiltration
 import io.hakaisecurity.beerusframework.core.models.Application
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.updateanimationStartState
+import io.hakaisecurity.beerusframework.core.utils.ApplicationInformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

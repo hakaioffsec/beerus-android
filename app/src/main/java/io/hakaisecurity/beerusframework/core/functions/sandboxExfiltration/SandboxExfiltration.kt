@@ -1,7 +1,9 @@
 package io.hakaisecurity.beerusframework.core.functions.sandboxExfiltration
 
 import io.hakaisecurity.beerusframework.core.models.Application
+import io.hakaisecurity.beerusframework.core.network.grpc.BeerusGrpcUploader
 import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
+import io.hakaisecurity.beerusframework.grpc.ArtifactKind
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -13,8 +15,6 @@ import okhttp3.Response
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
-import io.hakaisecurity.beerusframework.core.network.grpc.BeerusGrpcUploader
-import io.hakaisecurity.beerusframework.grpc.ArtifactKind
 
 class SandboxExfiltration {
     private val client = OkHttpClient()
