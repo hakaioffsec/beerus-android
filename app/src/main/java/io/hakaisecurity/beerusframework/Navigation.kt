@@ -73,6 +73,7 @@ import com.skydoves.landscapist.glide.GlideImage
 import io.hakaisecurity.beerusframework.composables.ADBScreen
 import io.hakaisecurity.beerusframework.composables.BootScreen
 import io.hakaisecurity.beerusframework.composables.FridaScreen
+import io.hakaisecurity.beerusframework.composables.FridaScriptsScreen
 import io.hakaisecurity.beerusframework.composables.HomeScreen
 import io.hakaisecurity.beerusframework.composables.ManifestScreen
 import io.hakaisecurity.beerusframework.composables.MemDumpScreen
@@ -110,6 +111,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     var selectedItem by remember { mutableStateOf("Home") }
 
     val iconFrida = ImageVector.vectorResource(id = R.drawable.frida)
+    val iconCode = ImageVector.vectorResource(id = R.drawable.ic_code)
     val iconRoot = ImageVector.vectorResource(id = R.drawable.rooticon)
     val iconADB = ImageVector.vectorResource(id = R.drawable.adb)
     val iconProperty = ImageVector.vectorResource(id = R.drawable.propertyicon)
@@ -117,7 +119,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
     val listState = rememberLazyListState()
     val density = LocalDensity.current
     val items = remember {
-        listOf("Home", "Frida Setup", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Root Manager", "Properties", "Boot Options", "Update")
+        listOf("Home", "Frida Setup", "Frida Scripts", "Sandbox Exf/", "Memory Dump", "Manifest", "ADB O/ Network", "Proxy Profiles", "Root Manager", "Properties", "Boot Options", "Update")
     }
     val selectedIndex = items.indexOf(selectedItem).coerceIn(0, items.lastIndex)
     val itemHeightPx = with(density) { 84.dp.toPx() }
@@ -203,7 +205,7 @@ fun BaseNavigationComponent(context: Context, modifier: Modifier) {
         state = listState,
         contentPadding = PaddingValues(top = 60.dp)
     ) {
-        val icons = mutableListOf(Home, iconFrida, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconRoot, iconProperty, restart_alt, restart_alt)
+        val icons = mutableListOf(Home, iconFrida, iconCode, iconPackage, iconMemory, iconPackage, iconADB, iconProxy, iconRoot, iconProperty, restart_alt, restart_alt)
 
         itemsIndexed(items) { index, item ->
             Row(
@@ -514,6 +516,7 @@ fun NavigationFunc(context: Context, modifier: Modifier = Modifier) {
             when (moduleName) {
                 "Home" -> HomeScreen(modifier)
                 "Frida Setup" -> FridaScreen(modifier, activity)
+                "Frida Scripts" -> FridaScriptsScreen(modifier, activity)
                 "Sandbox Exf/" -> SandboxScreen(modifier)
                 "Memory Dump" -> MemDumpScreen(modifier)
                 "Proxy Profiles" -> ProxyScreen(modifier, activity)
