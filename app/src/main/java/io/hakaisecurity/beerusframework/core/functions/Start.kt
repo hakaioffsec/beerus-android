@@ -9,26 +9,29 @@ class Start {
     companion object{
         fun detectRootModuleInstalled(callback: (Boolean) -> Unit) {
             val cmd = """
-                if [ -d /data/adb/modules/beerusRootModule ]; then
-                    echo true
-                else
-                    echo false
-                fi
+            if [ -d /data/adb/modules/beerusMagiskModule ]; then
+                echo true
+            else
+                echo false
+            fi
             """.trimIndent()
 
-            runSuCommand(cmd) {
-                callback(it.trim() == "true")
+            runSuCommand(cmd) { dirResult ->
+                val moduleDirExists = dirResult.trim() == "true"
+
+                detectMagisk { magiskPresent ->
+                    callback(moduleDirExists && magiskPresent)
+                }
             }
         }
 
         fun detectMagisk(callback: (Boolean) -> Unit) {
             val cmd = """
-                if [ -f /system/lib/libzygisk.so ] || [ -f /system/lib64/libzygisk.so ] || \
-                   [ -f /system/bin/magisk ] || [ -f /sbin/magisk ]; then
-                    echo true
-                else
-                    echo false
-                fi
+            output=${'$'}(magisk -v 2>/dev/null)
+            case "${'$'}output" in
+                *:MAGISK:*) echo true ;;
+                *) echo false ;;
+            esac
             """.trimIndent()
 
             runSuCommand(cmd) {
