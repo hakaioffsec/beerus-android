@@ -9,7 +9,7 @@ class Start {
     companion object{
         fun detectRootModuleInstalled(callback: (Boolean) -> Unit) {
             val cmd = """
-            if [ -d /data/adb/modules/beerusMagiskModule ]; then
+            if [ -d /data/adb/modules/beerusRootModule ]; then
                 echo true
             else
                 echo false
