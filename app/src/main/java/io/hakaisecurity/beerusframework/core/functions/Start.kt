@@ -20,7 +20,13 @@ class Start {
                 val moduleDirExists = dirResult.trim() == "true"
 
                 detectMagisk { magiskPresent ->
-                    callback(moduleDirExists && magiskPresent)
+                    if (magiskPresent) {
+                        callback(moduleDirExists)
+                    } else {
+                        detectKernelSu { kernelSuPresent ->
+                            callback(moduleDirExists && kernelSuPresent)
+                        }
+                    }
                 }
             }
         }
