@@ -1,11 +1,14 @@
 package io.hakaisecurity.beerusframework.core.functions.frida
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
-import io.hakaisecurity.beerusframework.core.utils.CommandUtils.Companion.runSuCommand
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import java.io.BufferedReader
+import java.io.DataOutputStream
 import java.io.File
+import java.io.InputStreamReader
 import java.util.concurrent.ConcurrentHashMap
 
 class AutoInject {
@@ -14,17 +17,91 @@ class AutoInject {
         private var lastCacheUpdate = 0L
         private const val CACHE_EXPIRY_MS = 5000L
 
+        val consoleLogs = mutableStateListOf<String>()
+        var isInjecting = mutableStateOf(false)
+        private var fridaProcess: Process? = null
+
         fun injectFridaCore(context: Context, packageName: String, script: String) {
-            val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
-            if (launchIntent != null) {
-                launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_HISTORY
-                context.startActivity(launchIntent)
+            stopFridaCore()
 
-                val scriptsFullPath = File(context.filesDir, "scripts").absolutePath + "/" + script
+            val scriptsFullPath = File(context.filesDir, "scripts").absolutePath + "/" + script
 
+            isInjecting.value = true
+            consoleLogs.clear()
+            consoleLogs.add("[*] Starting injection: $packageName")
+
+            Thread {
                 try {
-                    runSuCommand("sleep 5 && fridaCore \$(pidof $packageName) $scriptsFullPath") {}
-                } catch (e: Exception) {}
+                    // kill target app so spawn starts clean
+                    val prep = Runtime.getRuntime().exec("su")
+                    val prepOut = DataOutputStream(prep.outputStream)
+                    prepOut.writeBytes("am force-stop $packageName\n")
+                    prepOut.writeBytes("exit\n")
+                    prepOut.flush()
+                    prep.waitFor()
+
+                    val process = Runtime.getRuntime().exec("su")
+                    fridaProcess = process
+                    val outputStream = DataOutputStream(process.outputStream)
+                    val inputStream = BufferedReader(InputStreamReader(process.inputStream))
+                    val errorStream = BufferedReader(InputStreamReader(process.errorStream))
+
+                    outputStream.writeBytes("fridaCore $packageName '$scriptsFullPath'\n")
+                    outputStream.flush()
+
+                    val stdoutThread = Thread {
+                        try {
+                            var line: String?
+                            while (inputStream.readLine().also { line = it } != null) {
+                                line?.let { consoleLogs.add(it) }
+                            }
+                        } catch (_: Exception) {}
+                    }
+
+                    val stderrThread = Thread {
+                        try {
+                            var line: String?
+                            while (errorStream.readLine().also { line = it } != null) {
+                                line?.let { consoleLogs.add("[err] $it") }
+                            }
+                        } catch (_: Exception) {}
+                    }
+
+                    stdoutThread.start()
+                    stderrThread.start()
+
+                    process.waitFor()
+                    stdoutThread.join()
+                    stderrThread.join()
+
+                    consoleLogs.add("[*] Process exited")
+                } catch (e: Exception) {
+                    consoleLogs.add("[err] ${e.message}")
+                } finally {
+                    isInjecting.value = false
+                    fridaProcess = null
+                }
+            }.start()
+        }
+
+        fun stopFridaCore() {
+            fridaProcess?.let { proc ->
+                try {
+                    val kill = Runtime.getRuntime().exec("su")
+                    val out = DataOutputStream(kill.outputStream)
+                    // SIGINT triggers graceful shutdown (script unload + session detach)
+                    out.writeBytes("pkill -2 -f fridaCore\n")
+                    out.writeBytes("sleep 2\n")
+                    // force kill if still alive
+                    out.writeBytes("pkill -9 -f fridaCore\n")
+                    out.writeBytes("exit\n")
+                    out.flush()
+                    kill.waitFor()
+                    proc.destroy()
+                } catch (_: Exception) {}
+                fridaProcess = null
+                isInjecting.value = false
+                consoleLogs.add("[*] Stopped")
             }
         }
 

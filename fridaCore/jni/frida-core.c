@@ -29,14 +29,15 @@ main (int argc,
     gint num_devices, i;
     FridaDevice * local_device;
     FridaSession * session;
+    FridaSpawnOptions * spawn_options;
     gchar * script_source;
     gsize script_size;
 
     frida_init ();
 
-    if (argc != 3 || (target_pid = atoi (argv[1])) == 0)
+    if (argc != 3)
     {
-        g_printerr ("Usage: %s <pid> <script.js>\n", argv[0]);
+        g_printerr ("Usage: %s <package-name> <script.js>\n", argv[0]);
         return 1;
     }
 
@@ -54,7 +55,14 @@ main (int argc,
     manager = frida_device_manager_new ();
 
     devices = frida_device_manager_enumerate_devices_sync (manager, NULL, &error);
-    g_assert (error == NULL);
+    if (error != NULL)
+    {
+        g_printerr ("Failed to enumerate devices: %s\n", error->message);
+        g_error_free (error);
+        frida_unref (manager);
+        g_main_loop_unref (loop);
+        return 1;
+    }
 
     local_device = NULL;
     num_devices = frida_device_list_size (devices);
@@ -68,10 +76,34 @@ main (int argc,
 
         g_object_unref (device);
     }
-    g_assert (local_device != NULL);
+
+    if (local_device == NULL)
+    {
+        g_printerr ("No local device found\n");
+        frida_unref (devices);
+        frida_device_manager_close_sync (manager, NULL, NULL);
+        frida_unref (manager);
+        g_main_loop_unref (loop);
+        return 1;
+    }
 
     frida_unref (devices);
     devices = NULL;
+
+    g_print ("[*] Spawning %s...\n", argv[1]);
+
+    spawn_options = frida_spawn_options_new ();
+    target_pid = frida_device_spawn_sync (local_device, argv[1], spawn_options, NULL, &error);
+    g_object_unref (spawn_options);
+
+    if (error != NULL)
+    {
+        g_printerr ("Failed to spawn: %s\n", error->message);
+        g_error_free (error);
+        goto cleanup;
+    }
+
+    g_print ("[*] Spawned PID: %u (suspended)\n", target_pid);
 
     session = frida_device_attach_sync (local_device, target_pid, NULL, NULL, &error);
     if (error == NULL)
@@ -86,21 +118,49 @@ main (int argc,
         g_print ("[*] Attached\n");
 
         options = frida_script_options_new ();
-        frida_script_options_set_name (options, "example");
+        frida_script_options_set_name (options, "beerus");
         frida_script_options_set_runtime (options, FRIDA_SCRIPT_RUNTIME_QJS);
 
         script = frida_session_create_script_sync (session, script_source, options, NULL, &error);
-        g_assert (error == NULL);
-
         g_clear_object (&options);
         g_free (script_source);
+
+        if (error != NULL)
+        {
+            g_printerr ("Failed to create script: %s\n", error->message);
+            g_error_free (error);
+            frida_device_resume_sync (local_device, target_pid, NULL, NULL);
+            frida_session_detach_sync (session, NULL, NULL);
+            frida_unref (session);
+            goto cleanup;
+        }
 
         g_signal_connect (script, "message", G_CALLBACK (on_message), NULL);
 
         frida_script_load_sync (script, NULL, &error);
-        g_assert (error == NULL);
+        if (error != NULL)
+        {
+            g_printerr ("Failed to load script: %s\n", error->message);
+            g_error_free (error);
+            frida_unref (script);
+            frida_device_resume_sync (local_device, target_pid, NULL, NULL);
+            frida_session_detach_sync (session, NULL, NULL);
+            frida_unref (session);
+            goto cleanup;
+        }
 
-        g_print ("[*] Script loaded\n");
+        g_print ("[*] Script loaded, resuming process...\n");
+
+        frida_device_resume_sync (local_device, target_pid, NULL, &error);
+        if (error != NULL)
+        {
+            g_printerr ("Failed to resume: %s\n", error->message);
+            g_error_free (error);
+        }
+        else
+        {
+            g_print ("[*] Resumed\n");
+        }
 
         if (g_main_loop_is_running (loop))
             g_main_loop_run (loop);
@@ -120,8 +180,10 @@ main (int argc,
     {
         g_printerr ("Failed to attach: %s\n", error->message);
         g_error_free (error);
+        frida_device_resume_sync (local_device, target_pid, NULL, NULL);
     }
 
+cleanup:
     frida_unref (local_device);
     frida_device_manager_close_sync (manager, NULL, NULL);
     frida_unref (manager);
@@ -158,9 +220,15 @@ on_message (FridaScript * script,
   const gchar * type;
 
   parser = json_parser_new ();
-  json_parser_load_from_data (parser, message, -1, NULL);
-  root = json_node_get_object (json_parser_get_root (parser));
+  if (!json_parser_load_from_data (parser, message, -1, NULL) ||
+      json_parser_get_root (parser) == NULL)
+  {
+    g_print ("on_message (raw): %s\n", message);
+    g_object_unref (parser);
+    return;
+  }
 
+  root = json_node_get_object (json_parser_get_root (parser));
   type = json_object_get_string_member (root, "type");
   if (strcmp (type, "log") == 0)
   {

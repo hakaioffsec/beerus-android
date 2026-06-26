@@ -5,7 +5,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := fridaCore
 LOCAL_SRC_FILES := frida-core.c
 
-LOCAL_LDLIBS    := -llog -ldl -lm -pthread
+LOCAL_LDLIBS    := -llog -ldl -lm -latomic -pthread
 LOCAL_STATIC_LIBRARIES := libfrida-core
 LOCAL_LDFLAGS   := -Wl,--export-dynamic
 

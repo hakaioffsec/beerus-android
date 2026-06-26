@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
@@ -83,11 +84,13 @@ import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
 import io.github.rosemoe.sora.langs.textmate.registry.model.ThemeModel
 import io.github.rosemoe.sora.langs.textmate.registry.provider.AssetsFileResolver
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
+import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.consoleLogs
 import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.deleteScript
 import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.getFileNameFromUri
 import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.getScriptsContent
 import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.injectFridaCore
 import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.saveScript
+import io.hakaisecurity.beerusframework.core.functions.frida.AutoInject.Companion.stopFridaCore
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.inEditorMode
 import io.hakaisecurity.beerusframework.core.models.FridaState.Companion.packageName
 import io.hakaisecurity.beerusframework.core.models.NavigationState.Companion.animationStart
@@ -95,6 +98,7 @@ import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.confirm
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasModule
 import io.hakaisecurity.beerusframework.core.models.StartModel.Companion.hasRoot
 import io.hakaisecurity.beerusframework.ui.theme.Arrow_back
+import io.hakaisecurity.beerusframework.ui.theme.Terminal
 import io.hakaisecurity.beerusframework.ui.theme.Trash
 import io.hakaisecurity.beerusframework.ui.theme.ibmFont
 import org.eclipse.tm4e.core.registry.IThemeSource
@@ -443,6 +447,7 @@ fun FridaScriptsScreen(modifier: Modifier, activity: Activity) {
             )
         ) {
             var showPackageDialog by remember { mutableStateOf(false) }
+            var showConsole by remember { mutableStateOf(false) }
 
             Column(
                 modifier = Modifier
@@ -466,11 +471,12 @@ fun FridaScriptsScreen(modifier: Modifier, activity: Activity) {
                 Box(modifier = Modifier.fillMaxWidth().padding(5.dp, 15.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Arrow_back,
-                            contentDescription = "Icon",
+                            contentDescription = "Back",
                             tint = Color.White,
                             modifier = modifier
                                 .size(36.dp)
@@ -491,68 +497,109 @@ fun FridaScriptsScreen(modifier: Modifier, activity: Activity) {
                             fontFamily = ibmFont,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Icon(
+                            imageVector = Terminal,
+                            contentDescription = "Console",
+                            tint = if (showConsole) Color.Red else Color.White,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentWidth(Alignment.CenterHorizontally)
-                                .padding(end = 10.dp)
+                                .size(28.dp)
+                                .padding(end = 8.dp)
                         )
                     }
                 }
 
-                if (isEditorReady) {
-                    ScriptsSoraCodeEditor(
-                        initialText = selectedScriptContent.text,
-                        onEditorCreated = { editor -> editorRef = editor },
-                        modifier = modifier.weight(1f),
-                        context = activity
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Loading...", fontSize = 16.sp, color = Color.White, fontFamily = ibmFont)
+                Crossfade(
+                    targetState = showConsole,
+                    animationSpec = tween(durationMillis = 300),
+                    label = "consoleEditorCrossfade",
+                    modifier = Modifier.weight(1f)
+                ) { inConsole ->
+                    if (inConsole) {
+                        FridaConsoleView(modifier = modifier.fillMaxSize())
+                    } else if (isEditorReady) {
+                        ScriptsSoraCodeEditor(
+                            initialText = selectedScriptContent.text,
+                            onEditorCreated = { editor -> editorRef = editor },
+                            modifier = modifier.fillMaxSize(),
+                            context = activity
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Loading...", fontSize = 16.sp, color = Color.White, fontFamily = ibmFont)
+                        }
                     }
                 }
 
                 Row(modifier = Modifier.fillMaxWidth().padding(25.dp, 0.dp)) {
-                    Button(
-                        onClick = {
-                            if (packageName != "") {
-                                injectFridaCore(
-                                    activity,
-                                    packageName,
-                                    selectedScript
-                                )
-                            } else {
-                                Toast.makeText(activity, "select an app package", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                        modifier = Modifier
-                            .padding(end = 5.dp)
-                            .weight(1f)
-                    ) {
-                        Text("Run", fontSize = 11.sp, color = Color.Red, fontFamily = ibmFont)
-                    }
+                    if (showConsole) {
+                        Button(
+                            onClick = {
+                                stopFridaCore()
+                                showConsole = false
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .padding(end = 5.dp)
+                                .weight(1f)
+                        ) {
+                            Text("Stop", fontSize = 11.sp, color = Color.White, fontFamily = ibmFont)
+                        }
 
-                    Button(
-                        onClick = {
-                            val toPersist = (editorRef?.text?.toString() ?: selectedScriptContent.text).replace("\r\n", "\n")
-                            saveScript(activity, selectedScript, toPersist)
-                            refreshScripts()
-                            Toast.makeText(activity, "Script saved successfully", Toast.LENGTH_SHORT).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                        modifier = Modifier
-                            .padding(start = 5.dp)
-                            .weight(1f)
-                    ) {
-                        Text("Save", fontSize = 11.sp, color = Color.Red, fontFamily = ibmFont)
+                        Button(
+                            onClick = { consoleLogs.clear() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .padding(start = 5.dp)
+                                .weight(1f)
+                        ) {
+                            Text("Clear", fontSize = 11.sp, color = Color.Red, fontFamily = ibmFont)
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                if (packageName != "") {
+                                    injectFridaCore(
+                                        activity,
+                                        packageName,
+                                        selectedScript
+                                    )
+                                    showConsole = true
+                                } else {
+                                    Toast.makeText(activity, "select an app package", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .padding(end = 5.dp)
+                                .weight(1f)
+                        ) {
+                            Text("Run", fontSize = 11.sp, color = Color.Red, fontFamily = ibmFont)
+                        }
+
+                        Button(
+                            onClick = {
+                                val toPersist = (editorRef?.text?.toString() ?: selectedScriptContent.text).replace("\r\n", "\n")
+                                saveScript(activity, selectedScript, toPersist)
+                                refreshScripts()
+                                Toast.makeText(activity, "Script saved successfully", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .padding(start = 5.dp)
+                                .weight(1f)
+                        ) {
+                            Text("Save", fontSize = 11.sp, color = Color.Red, fontFamily = ibmFont)
+                        }
                     }
                 }
 
@@ -842,4 +889,57 @@ fun ScriptsAppListDialog(context: Context, onDismiss: () -> Unit) {
             }
         }
     )
+}
+
+@Composable
+fun FridaConsoleView(modifier: Modifier = Modifier) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(consoleLogs.size) {
+        if (consoleLogs.isNotEmpty()) {
+            listState.animateScrollToItem(consoleLogs.size - 1)
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF0D0D0D))
+            .border(1.dp, Color(0xFF2A2A2A), RoundedCornerShape(8.dp))
+    ) {
+        if (consoleLogs.isEmpty()) {
+            Text(
+                text = "No logs yet. Run a script to see output.",
+                color = Color(0xFF858585),
+                fontSize = 13.sp,
+                fontFamily = ibmFont,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp)
+            ) {
+                items(consoleLogs.size) { index ->
+                    val line = consoleLogs[index]
+                    val color = when {
+                        line.startsWith("[err]") -> Color(0xFFFF6B6B)
+                        line.startsWith("[*]") -> Color(0xFF69DB7C)
+                        else -> Color(0xFFD4D4D4)
+                    }
+                    Text(
+                        text = line,
+                        color = color,
+                        fontSize = 12.sp,
+                        fontFamily = ibmFont,
+                        modifier = Modifier.padding(vertical = 1.dp)
+                    )
+                }
+            }
+        }
+    }
 }
